@@ -59,6 +59,8 @@ dependencies {
 }
 
 dependencies {
+    implementation(libs.androidx.compiler)
+    implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.annotation)
@@ -71,6 +73,7 @@ dependencies {
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
     implementation("androidx.navigation:navigation-compose:2.5.3")
+    implementation("com.google.guava:guava:27.0.1-android")
 }
 
 android {
@@ -85,5 +88,11 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+}
+
+configurations {
+    all {
+        exclude("com.google.guava.listenablefuture")
     }
 }

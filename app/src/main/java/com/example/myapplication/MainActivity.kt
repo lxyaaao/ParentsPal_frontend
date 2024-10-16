@@ -1,15 +1,21 @@
 package com.example.myapplication
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
@@ -31,15 +37,23 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -52,7 +66,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                MainScreen()
+                MainScreen(this)
 //                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 //                    CenterAlignedTopAppBarExample()
 //                    Greeting(
@@ -89,7 +103,7 @@ fun FilledButtonExample(onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CenterAlignedTopAppBarExample() {
+private fun CenterAlignedTopAppBarExample() {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -103,22 +117,22 @@ fun CenterAlignedTopAppBarExample() {
                 ),
                 title = {
                     Text(
-                        "Centered Top App Bar",
+                        "Home",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
-                navigationIcon = {
-                    FinishAffinityButton()
-                },
-                actions = {
-                    IconButton(onClick = { /* do something */ }) {
-                        Icon(
-                            imageVector = Icons.Filled.Menu,
-                            contentDescription = "Localized description"
-                        )
-                    }
-                },
+//                navigationIcon = {
+//                    FinishAffinityButton()
+//                },
+//                actions = {
+//                    IconButton(onClick = { /* do something */ }) {
+//                        Icon(
+//                            imageVector = Icons.Filled.Menu,
+//                            contentDescription = "Localized description"
+//                        )
+//                    }
+//                },
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -157,12 +171,13 @@ fun ScrollContent(innerPadding: PaddingValues) {
 
 sealed class NavItem(val route: String, val icon: ImageVector, val title: String) {
     object Home : NavItem("home", Icons.Filled.Home, "Home")
-    object Dashboard : NavItem("dashboard", Icons.Filled.Dashboard, "Dashboard")
-    object Notifications : NavItem("notifications", Icons.Filled.Notifications, "Notifications")
+    object Share : NavItem("share", Icons.Filled.Share, "Blog")
+    object QuestionAnswer : NavItem("questionanswer", Icons.Filled.QuestionAnswer, "Q&A")
+    object Person : NavItem("person", Icons.Filled.Person, "Me")
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(activity: Activity) {
     val navController = rememberNavController()
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
@@ -173,10 +188,36 @@ fun MainScreen() {
             startDestination = NavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(NavItem.Home.route) { HomeScreen() }
-            composable(NavItem.Dashboard.route) { DashboardScreen() }
-            composable(NavItem.Notifications.route) { NotificationsScreen() }
+            composable(NavItem.Home.route) { HomeMainScreen(activity) }
+            composable(NavItem.Share.route) { ShareScreen(activity) }
+            composable(NavItem.QuestionAnswer.route) { QuestionAnswerScreen(activity) }
+            composable(NavItem.Person.route) { PersonScreen(activity) }
         }
+    }
+}
+
+@Composable
+fun HomeMainScreen(activity: Activity) {
+    // Replace with actual login UI and logic
+    var checkin by remember { mutableStateOf("") }
+    var memo by remember { mutableStateOf("") }
+    var tips by remember { mutableStateOf("") }
+    Column(modifier = Modifier.padding(32.dp)) {
+        Spacer(modifier = Modifier.height(64.dp))
+        CustomButton(
+            title = "打卡记录",
+            description = "xxx"
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        CustomButton(
+            title = "备忘录",
+            description = "xxx"
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        CustomButton(
+            title = "tips",
+            description = "xxx"
+        )
     }
 }
 
@@ -184,8 +225,9 @@ fun MainScreen() {
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavItem.Home,
-        NavItem.Dashboard,
-        NavItem.Notifications
+        NavItem.Share,
+        NavItem.QuestionAnswer,
+        NavItem.Person
     )
     NavigationBar {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
@@ -207,19 +249,34 @@ fun BottomNavigationBar(navController: NavController) {
 }
 
 @Composable
-fun HomeScreen() {
-//    Text("Home Screen")
+fun HomeScreen(activity: Activity) {
+    val intent = Intent(activity, MainActivity::class.java)
+    activity.startActivity(intent)
+    activity.overridePendingTransition(0, 0)
+    activity.finish()
 }
 
 @Composable
-fun DashboardScreen() {
-//    Text("Dashboard Screen")
+fun ShareScreen(activity: Activity) {
+    val intent = Intent(activity, BlogActivity::class.java)
+    activity.startActivity(intent)
+    activity.overridePendingTransition(0, 0)
+    activity.finish()
 }
 
 @Composable
-fun NotificationsScreen() {
-//    Text("Notifications Screen")
-}
+fun QuestionAnswerScreen(activity: Activity) {
+    val intent = Intent(activity, QAActivity::class.java)
+    activity.startActivity(intent)
+    activity.overridePendingTransition(0, 0)
+    activity.finish()}
+
+@Composable
+fun PersonScreen(activity: Activity) {
+    val intent = Intent(activity, MeActivity::class.java)
+    activity.startActivity(intent)
+    activity.overridePendingTransition(0, 0)
+    activity.finish()}
 
 @Preview(showBackground = true)
 @Composable
@@ -227,5 +284,35 @@ fun GreetingPreview() {
     MyApplicationTheme {
         CenterAlignedTopAppBarExample()
         Greeting("Android")
+    }
+}
+
+@Composable
+fun CustomButton(title: String, description: String) {
+    Box(
+        modifier = Modifier
+            .height(160.dp)
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(Color.LightGray.copy(alpha = 0.2f))
+            .clickable { /* 点击事件 */ }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text(
+                text = title,
+                fontSize = 12.sp,
+                color = Color.Black
+            )
+            Text(
+                text = description,
+                fontSize = 10.sp,
+                color = Color.Black
+            )
+        }
     }
 }
