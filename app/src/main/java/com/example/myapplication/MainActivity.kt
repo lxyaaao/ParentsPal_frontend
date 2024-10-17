@@ -198,10 +198,6 @@ fun MainScreen(activity: Activity) {
 
 @Composable
 fun HomeMainScreen(activity: Activity) {
-    // Replace with actual login UI and logic
-    var checkin by remember { mutableStateOf("") }
-    var memo by remember { mutableStateOf("") }
-    var tips by remember { mutableStateOf("") }
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(64.dp))
         CustomButton(
