@@ -158,7 +158,9 @@ fun ProfileSection(avatarResId: Int, nickname: String, activity: Activity) {
         ButtonWithBars("个人资料") {
         }
         ButtonWithBars("专业认证") {
-            // 专业认证事件
+            val intent = Intent(activity, CertificationActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
         }
         Divider(color = Color.LightGray, thickness = 1.dp)
 
@@ -218,15 +220,15 @@ fun ButtonWithBars(buttonText: String, onClick: () -> Unit) {
         Button(
             onClick = onClick,
             modifier = Modifier
-                .fillMaxWidth() // 水平方向占满
-                .height(48.dp), // 设置按钮高度
+                .fillMaxWidth()
+                .height(48.dp),
             shape = RectangleShape,
-            colors = ButtonDefaults.buttonColors(Color.White) // 背景颜色为白色
+            colors = ButtonDefaults.buttonColors(Color.White)
         ) {
             Text(
-                text = buttonText, // 按钮文字
-                color = Color.Black, // 文字颜色
-                textAlign = TextAlign.Center // 文字居中
+                text = buttonText,
+                color = Color.Black,
+                textAlign = TextAlign.Center
             )
         }
     }
