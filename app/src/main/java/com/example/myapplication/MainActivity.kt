@@ -1,7 +1,9 @@
 package com.example.myapplication
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
@@ -105,17 +108,6 @@ private fun CenterAlignedTopAppBarExample() {
                         overflow = TextOverflow.Ellipsis
                     )
                 },
-//                navigationIcon = {
-//                    FinishAffinityButton()
-//                },
-//                actions = {
-//                    IconButton(onClick = { /* do something */ }) {
-//                        Icon(
-//                            imageVector = Icons.Filled.Menu,
-//                            contentDescription = "Localized description"
-//                        )
-//                    }
-//                },
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -181,21 +173,36 @@ fun MainScreen(activity: Activity) {
 
 @Composable
 fun HomeMainScreen(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(64.dp))
         CustomButton(
             title = "打卡记录",
-            description = "xxx"
+            description = getCheckin(activity).toString(),
+            onClick = {
+                val intent = Intent(activity, DailyLogActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
         )
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
             title = "备忘录",
-            description = "xxx"
+            description = sharedPreferences.getString("memo", " ") ?: " ",
+            onClick = {
+                val intent = Intent(activity, MemoActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
         )
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
             title = "tips",
-            description = "xxx"
+            description = "xxx",
+            onClick = {
+            }
         )
     }
 }
@@ -259,14 +266,14 @@ fun PersonScreen(activity: Activity) {
 
 
 @Composable
-fun CustomButton(title: String, description: String) {
+fun CustomButton(title: String, description: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .height(160.dp)
             .fillMaxWidth()
             .padding(8.dp)
             .background(Color.LightGray.copy(alpha = 0.2f))
-            .clickable { /* 点击事件 */ }
+            .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
@@ -286,4 +293,21 @@ fun CustomButton(title: String, description: String) {
             )
         }
     }
+}
+
+@Composable
+fun getCheckin(activity: Activity): String {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
+
+    val StringBuilder = StringBuilder()
+    for (i in checkIns.indices.reversed()) {
+        val checkIn = checkIns[i]
+        StringBuilder.append("${checkIn.date} ${checkIn.content}\n")
+    }
+    val String = StringBuilder.toString()
+
+    return String
 }

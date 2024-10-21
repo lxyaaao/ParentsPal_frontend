@@ -7,7 +7,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +21,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
@@ -59,8 +68,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -95,56 +108,68 @@ private fun BlogScreen(activity: Activity) {
                 newState -> isMenuExpanded = newState
             } },
             bottomBar = { BottomNavigationBar(navController) }
-    ) { Paddingvalues ->
+    ) { paddingValues ->
         NavHost(
             navController = navController,
             startDestination = NavItem.Share.route,
-            modifier = Modifier.padding(Paddingvalues)
+            modifier = Modifier.padding(paddingValues)
         ) {
             composable(NavItem.Home.route) { HomeScreen(activity) }
             composable(NavItem.Share.route) { BlogMainScreen(activity) }
             composable(NavItem.QuestionAnswer.route) { QuestionAnswerScreen(activity) }
             composable(NavItem.Person.route) { PersonScreen(activity) }
         }
-        Column(modifier = Modifier.padding(Paddingvalues)) {
-            // TabRow
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                val tabTitles = listOf("分享", "问答")
-                tabTitles.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = {
-                            selectedTabIndex = index // 处理点击事件，例如切换内容
+        Scaffold(
+            topBar = {
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    val tabTitles = listOf("分享", "问答")
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = {
+                                selectedTabIndex = index // 处理点击事件，例如切换内容
                             },
-                        text = { Text(title) }
-                    )
+                            text = { Text(title) }
+                        )
+                    }
+                }
+            },
+            modifier = Modifier.padding(paddingValues)
+                .pointerInput(Unit) {
+                    // 监听点击事件
+                    detectTapGestures(onTap = {
+                        isMenuExpanded = false
+                    })
+                }
+        ) {
+            paddingValuesIn ->
+            Column(modifier = Modifier.padding(paddingValuesIn)) {
+                when (selectedTabIndex) {
+                    0 -> TabContent1()
+                    1 -> TabContent2()
                 }
             }
-
-            // 根据选中的 Tab 显示不同的内容
-            when (selectedTabIndex) {
-                0 -> TabContent1() // 显示第一个 Tab 的内容
-                1 -> TabContent2() // 显示第二个 Tab 的内容
+            Row(modifier = Modifier.padding(paddingValuesIn)) {
+                SideRail(isMenuExpanded)
             }
         }
 
-        Row(modifier = Modifier.padding(Paddingvalues)) {
-            SideRail(isMenuExpanded)
-        }
+
     }
+}
+
+
+@Composable
+fun TabContent1() {
+    ShareContent()
 }
 
 @Composable
 fun TabContent2() {
-
-}
-
-@Composable
-fun TabContent1() {
-
+    AskContent()
 }
 
 private fun BlogMainScreen(activity: Activity) {
@@ -195,11 +220,10 @@ private fun CenterAlignedTopAppBarExample(
 fun SideRail(isMenuExpanded: Boolean) {
     var selectedItem by remember { mutableStateOf(0) }
 
-    NavigationRail(
-        containerColor = Color.Transparent
-    ) {
-        if (isMenuExpanded) {
-            Spacer(modifier = Modifier.height(32.dp))
+    if (isMenuExpanded) {
+        NavigationRail(
+            containerColor = Color.White
+        ) {
             // NavigationRailItem 1
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Recommend, contentDescription = "推荐") },
@@ -237,6 +261,77 @@ fun SideRail(isMenuExpanded: Boolean) {
                     // 处理点击事件
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun ShareContent() {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp)
+    ) {
+        items(5) { index -> // 假设有5篇博客
+            BlogPost(
+                avatarResId = R.drawable.baseline_account_circle_24, // 替换为实际头像URL
+                username = "User ${index + 1}",
+                content = "这是第 ${index + 1} 篇博客。",
+                comments = listOf("评论1", "评论2") // 示例评论
+            )
+        }
+    }
+}
+
+@Composable
+fun AskContent() {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp)
+    ) {
+        items(5) { index -> // 假设有5篇博客
+            BlogPost(
+                avatarResId = R.drawable.baseline_account_circle_24, // 替换为实际头像URL
+                username = "User ${index + 1}",
+                content = "这是第 ${index + 1} 个问题。",
+                comments = listOf("回答1", "回答2") // 示例评论
+            )
+        }
+    }
+}
+
+@Composable
+fun BlogPost(avatarResId: Int, username: String, content: String, comments: List<String>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(Color.White, shape = RoundedCornerShape(8.dp))
+            .border(1.dp, Color.LightGray, shape = RoundedCornerShape(8.dp))
+            .padding(16.dp)
+    ) {
+        // 头像和昵称
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(id = avatarResId),
+                contentDescription = "Avatar",
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .padding(4.dp),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = username)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 博客内容
+        Text(text = content)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 评论
+        for (comment in comments) {
+            Text(text = comment, color = Color.Gray)
         }
     }
 }
