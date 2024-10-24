@@ -95,7 +95,7 @@ private fun MeMainScreen(activity: Activity) {
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(48.dp))
         ProfileSection(
-            avatarResId = R.drawable.baseline_account_circle_24,  // 这里是你的头像资源
+            avatarResId = R.drawable.baseline_account_circle_24,
             nickname = nickname,
             activity
         )
@@ -147,8 +147,14 @@ fun ProfileSection(avatarResId: Int, nickname: String, activity: Activity) {
 
         Spacer(modifier = Modifier.height(24.dp))
         ButtonWithBars("我的打卡") {
+            val intent = Intent(activity, DailyLogActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
         }
         ButtonWithBars("我的发表") {
+            val intent = Intent(activity, BlogMineActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
         }
         ButtonWithBars("我的私信") {
         }
