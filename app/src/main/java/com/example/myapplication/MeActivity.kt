@@ -93,12 +93,52 @@ private fun MeMainScreen(activity: Activity) {
     val nickname = getNicknameFromSharedPreferences(activity)
 
     Column(modifier = Modifier.padding(32.dp)) {
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(60.dp))
         ProfileSection(
             avatarResId = R.drawable.baseline_account_circle_24,
             nickname = nickname,
             activity
         )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            ButtonWithBars("我的关注") {
+            }
+            ButtonWithBars("我的粉丝") {
+            }
+            Divider(color = Color.LightGray, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            ButtonWithBars("我的打卡") {
+                val intent = Intent(activity, DailyLogActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
+            ButtonWithBars("我的发表") {
+                val intent = Intent(activity, BlogMineActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
+            ButtonWithBars("我的私信") {
+            }
+            Divider(color = Color.LightGray, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            ButtonWithBars("专业认证") {
+                val intent = Intent(activity, CertificationActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
+            Divider(color = Color.LightGray, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            ButtonWithBars("设置") {
+                val intent = Intent(activity, SettingActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
+            Divider(color = Color.LightGray, thickness = 1.dp)
+        }
     }
 }
 
@@ -135,45 +175,6 @@ fun ProfileSection(avatarResId: Int, nickname: String, activity: Activity) {
                 .align(Alignment.CenterVertically) // 垂直居中对齐
                 .clickable { showEditButton = true }  // 点击显示“编辑资料”按钮
         )
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(16.dp))
-        ButtonWithBars("我的关注") {
-        }
-        ButtonWithBars("我的粉丝") {
-        }
-        Divider(color = Color.LightGray, thickness = 1.dp)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        ButtonWithBars("我的打卡") {
-            val intent = Intent(activity, DailyLogActivity::class.java)
-            activity.startActivity(intent)
-            activity.finish()
-        }
-        ButtonWithBars("我的发表") {
-            val intent = Intent(activity, BlogMineActivity::class.java)
-            activity.startActivity(intent)
-            activity.finish()
-        }
-        ButtonWithBars("我的私信") {
-        }
-        Divider(color = Color.LightGray, thickness = 1.dp)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        ButtonWithBars("个人资料") {
-        }
-        ButtonWithBars("专业认证") {
-            val intent = Intent(activity, CertificationActivity::class.java)
-            activity.startActivity(intent)
-            activity.finish()
-        }
-        Divider(color = Color.LightGray, thickness = 1.dp)
-
-        Spacer(modifier = Modifier.height(24.dp))
-        ButtonWithBars("设置") {
-        }
-        Divider(color = Color.LightGray, thickness = 1.dp)
     }
 
     // 如果 showDialog 为 true，则显示大图

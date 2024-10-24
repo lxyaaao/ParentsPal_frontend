@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,22 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
-class LoginActivity : ComponentActivity() {
+class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        // 检查是否已经登录
-        if (isLoggedIn()) {
-            // 如果已登录，则跳转到主界面
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
-            return
-        }
 
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
-                LoginScreen(this, onLoginSuccess = {
+                SignUpScreen(this, onLoginSuccess = {
                     // Navigate to MainActivity on successful login
                     val intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
@@ -63,19 +59,17 @@ class LoginActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun isLoggedIn(): Boolean {
-        val sharedPreferences = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-        return sharedPreferences.getBoolean("isLoggedIn", false)
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
+fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
     // Replace with actual login UI and logic
     var tele by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var errorDialog by remember { mutableStateOf(false) }
+    var backFlag by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -86,10 +80,18 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                 ),
                 title = {
                     Text(
-                        "登录",
+                        "注册",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { backFlag = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
                 },
             )
         },
@@ -119,44 +121,41 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
-                    saveLoginStatus(activity, true)
-                    onLoginSuccess()
+                    if (tele.length == 11) {
+                        saveLoginStatus(activity, true)
+                        onLoginSuccess()
+                    } else {
+                        errorDialog = true
+                    }
                 },
                     modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    Text("登入")
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize() // 占满整个屏幕
-                    .padding(bottom = 16.dp) // 保证按钮不会紧贴屏幕底部，留下一些距离
-            ) {
-                // 透明背景按钮，位于底部中央
-                TextButton(
-                    onClick = {
-                        // 跳转到下一个界面
-                        val intent = Intent(activity, SignUpActivity::class.java)
-                        activity.startActivity(intent)
-                        activity.finish()
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter) // 保证按钮在屏幕底部中央
-                ) {
-                    Text(
-                        text = "没有账户？点我注册",
-                        fontSize = 12.sp, // 设置较小字体
-                        color = Color.Gray // 设置文字颜色
-                    )
+                    Text("注册")
                 }
             }
         }
     )
-}
-fun saveLoginStatus(activity: Activity, isLoggedIn: Boolean) {
-    val sharedPreferences =
-        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
-    editor.putBoolean("isLoggedIn", isLoggedIn)
-    editor.apply()
+
+    if (backFlag) {
+        val intent = Intent(activity, LoginActivity::class.java)
+        activity.startActivity(intent)
+        activity.finish()
+    }
+
+    if(errorDialog) {
+        AlertDialog(
+            onDismissRequest = { errorDialog = false },
+            text = { Text(
+                text = "不是有效的电话号码！",
+                modifier = Modifier.padding(16.dp)
+            ) },confirmButton = {
+                TextButton(
+                    onClick = {
+                        errorDialog = false
+                    }
+                ) {
+                    Text("确认")
+                }
+            },
+        )
+    }
 }
