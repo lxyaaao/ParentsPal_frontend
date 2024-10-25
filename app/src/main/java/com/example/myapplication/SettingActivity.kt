@@ -143,7 +143,7 @@ private fun SettingScreen(activity: Activity) {
         AlertDialog(
             onDismissRequest = { quitDialog = false },
             text = { Text(
-                text = "你确定要退出吗？",
+                text = "你确定要退出账户吗？",
                 modifier = Modifier.padding(16.dp)
             ) },
             confirmButton = {
