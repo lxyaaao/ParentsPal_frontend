@@ -40,6 +40,7 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         // 检查是否已经登录
         if (isLoggedIn()) {
@@ -50,7 +51,6 @@ class LoginActivity : ComponentActivity() {
             return
         }
 
-        super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
                 LoginScreen(this, onLoginSuccess = {

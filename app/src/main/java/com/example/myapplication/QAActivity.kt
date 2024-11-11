@@ -3,8 +3,6 @@ package com.example.myapplication
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -50,6 +48,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -195,12 +201,72 @@ fun ConversationList(conversations: List<ConversationItem>, listState: LazyListS
     }
 }
 
+suspend fun sendPostRequest(message: String, conversation: String = ""): String {
+    return withContext(Dispatchers.IO) {
+        val url = URL("http://parentspal.natapp1.cc/v1/chat-messages")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Authorization", "Bearer app-2Z15tg459MeUA12SSjKuoyYt")
+        connection.setRequestProperty("Content-Type", "application/json; utf-8")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.doOutput = true
+
+        val jsonInputString = """
+            {
+                "inputs": {},
+                "query": "$message",
+                "response_mode": "blocking",
+                "conversation_id": "$conversation",
+                "user": "随便写一个"
+            }
+        """.trimIndent()
+
+        try {
+            connection.outputStream.use { os: OutputStream ->
+                val input = jsonInputString.toByteArray()
+                os.write(input, 0, input.size)
+            }
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+            } else {
+                connection.errorStream.use { it.reader().use { reader -> reader.readText() } }
+            }
+        } catch (e: Exception) {
+            "Error: ${e.message}"
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
+suspend fun sendGetRequest(urlString: String): String {
+    return withContext(Dispatchers.IO) {
+        val url = URL(urlString)
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+
+        try {
+            connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+        } catch (e: Exception) {
+            "Error: ${e.message}"
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
+
+
+
 @Composable
 private fun ConversationScreen(activity: Activity) {
     val textState = remember { mutableStateOf("") }
     val currentText = remember { mutableStateOf("") }
     val conversations = remember { mutableStateOf(listOf<ConversationItem>()) }
     val listState = rememberLazyListState()
+    val conversationId = remember { mutableStateOf("") }
 
     LaunchedEffect(conversations.value.size) {
         listState.animateScrollToItem(conversations.value.size)
@@ -233,9 +299,21 @@ private fun ConversationScreen(activity: Activity) {
                         textState.value = ""
                         conversations.value = conversations.value + ConversationItem("User", currentText.value, SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()))
 
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            conversations.value = conversations.value + ConversationItem("Bot", currentText.value, SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()))
-                        }, (0..3000).random().toLong())
+
+                        CoroutineScope(Dispatchers.Main).launch {
+//                            val response = sendGetRequest("http://www.baidu.com")
+                            val response = sendPostRequest(currentText.value, conversationId.value)
+                            val jsonResponse = try {
+                                JSONObject(response)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                JSONObject()
+                            }
+                            conversationId.value = jsonResponse.optString("conversation_id", "")
+                            val responseText = jsonResponse.optString("answer", "")
+                            // Handle the response here
+                            conversations.value = conversations.value + ConversationItem("Bot", responseText, SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()))
+                        }
                     }) {
                         Icon(
                             imageVector = Icons.Default.Send,

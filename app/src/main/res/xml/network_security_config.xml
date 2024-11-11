@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">parentspal.natapp1.cc</domain>
+        <domain includeSubdomains="true">www.baidu.com</domain>
+    </domain-config>
+</network-security-config>
