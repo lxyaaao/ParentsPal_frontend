@@ -83,6 +83,9 @@ private fun AccountScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var passwordDialog by remember { mutableStateOf(false) }
 
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -128,7 +131,7 @@ private fun AccountScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "电话",
-                    rightText = " ",
+                    rightText = sharedPreferences.getString("phoneNumber", " ") ?: " ",
                     onClick = {}
                 )
 

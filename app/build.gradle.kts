@@ -74,6 +74,8 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation("androidx.navigation:navigation-compose:2.5.3")
     implementation("com.google.guava:guava:27.0.1-android")
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 }
 
 android {
