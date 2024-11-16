@@ -171,6 +171,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                 val loginResponse = response.body()
                 if (loginResponse != null) {
                     if (loginResponse.status) {
+                        saveInfo(activity, phoneNumber)
                         saveLoginStatus(activity, true)
                         onLoginSuccess()
                     } else {

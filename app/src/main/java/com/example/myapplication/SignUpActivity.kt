@@ -67,6 +67,7 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
     // Replace with actual login UI and logic
     var tele by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
 
     var errorDialog by remember { mutableStateOf(false) }
     var backFlag by remember { mutableStateOf(false) }
@@ -104,6 +105,13 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                     .padding(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center) {
+                Spacer(modifier = Modifier.height(16.dp))
+                TextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("名字") },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 TextField(
                     value = tele,

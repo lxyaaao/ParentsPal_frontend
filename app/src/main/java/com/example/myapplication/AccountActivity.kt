@@ -5,30 +5,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,28 +30,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.example.myapplication.api.ChangePasswordRequest
+import com.example.myapplication.api.LoginRequest
+import com.example.myapplication.api.LoginResponse
+import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class AccountActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +67,7 @@ private fun AccountScreen(activity: Activity) {
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val phoneNumber = sharedPreferences.getString("phoneNumber", "") ?: ""
 
     Scaffold(
         topBar = {
@@ -131,7 +114,7 @@ private fun AccountScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "电话",
-                    rightText = sharedPreferences.getString("phoneNumber", " ") ?: " ",
+                    rightText = phoneNumber,
                     onClick = {}
                 )
 
@@ -153,12 +136,12 @@ private fun AccountScreen(activity: Activity) {
     }
 
     if(passwordDialog) {
-        PasswordChangeDialog(onDismiss = { passwordDialog = false })
+        PasswordChangeDialog(phoneNumber, activity, onDismiss = { passwordDialog = false })
     }
 }
 
 @Composable
-fun PasswordChangeDialog(onDismiss: () -> Unit) {
+fun PasswordChangeDialog(phoneNumber: String, activity: Activity, onDismiss: () -> Unit) {
     var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -208,12 +191,11 @@ fun PasswordChangeDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = {
-                if (newPassword == confirmPassword) {
-                    // 新密码一致，关闭对话框
-                    onDismiss()
-                } else {
-                    // 新密码不一致，显示错误消息
-                    newErrorMessage = "两次输入的新密码不同"
+                checkPassword(phoneNumber, oldPassword,
+                        newPassword, confirmPassword, activity) {success ->
+                    if (success) {
+                        onDismiss()
+                    }
                 }
             }) {
                 Text("确认")
@@ -225,4 +207,59 @@ fun PasswordChangeDialog(onDismiss: () -> Unit) {
             }
         }
     )
+}
+
+fun checkPassword(phoneNumber: String, oldPassword: String,
+                  newPassword: String, confirmPassword: String,
+                  activity: Activity, callback: (Boolean) -> Unit) {
+    val request = LoginRequest(phoneNumber = phoneNumber, password = oldPassword)
+
+    RetrofitClient.apiService.login(request).enqueue(object : Callback<LoginResponse> {
+        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+            if (response.isSuccessful) {
+                val loginResponse = response.body()
+                if (loginResponse != null) {
+                    if (loginResponse.status) {
+                        if (newPassword == confirmPassword) {
+                            // TODO: post changePassword message to backend
+                            // changePassword(oldPassword, newPassword)
+                            callback(true)
+                        } else {
+                            Toast.makeText(activity, "新密码和确认密码不匹配", Toast.LENGTH_SHORT).show()
+                            callback(false)
+                        }
+                    } else {
+                        Toast.makeText(activity, loginResponse.message, Toast.LENGTH_SHORT).show()
+                        callback(false)
+                    }
+                }
+            } else {
+                Toast.makeText(activity, "网络错误，请稍后再试", Toast.LENGTH_SHORT).show()
+                callback(false)
+            }
+        }
+
+        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+            Toast.makeText(activity, "网络错误，请稍后再试", Toast.LENGTH_SHORT).show()
+            callback(false)
+        }
+    })
+}
+
+fun changePassword(oldPassword: String, newPassword: String): Boolean {
+    val response = RetrofitClient.apiService.changePassword(
+        ChangePasswordRequest(
+            oldPassword = oldPassword,
+            newPassword = newPassword
+        )
+    )
+
+    if (response.isSuccessful) {
+        // 处理成功逻辑
+        val responseBody = response.body()
+        if (responseBody?.status == true) {
+            return true
+        }
+    }
+    return false
 }
