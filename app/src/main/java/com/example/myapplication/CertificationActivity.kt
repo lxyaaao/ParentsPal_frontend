@@ -86,7 +86,7 @@ private fun CertificationScreen(activity: Activity) {
     var confirmClick by remember { mutableStateOf(false) }
 
     var nameClick by remember { mutableStateOf(false) }
-    var name by remember { mutableStateOf(sharedPreferences.getString("name", " ") ?: " ") }
+    var expertName by remember { mutableStateOf(sharedPreferences.getString("expertName", " ") ?: " ") }
 
     var jobClick by remember { mutableStateOf(false) }
     var job by remember { mutableStateOf(sharedPreferences.getString("job", " ") ?: " ") }
@@ -136,7 +136,7 @@ private fun CertificationScreen(activity: Activity) {
             ) {
                 ButtonWithTwoTexts(
                     leftText = "名字",
-                    rightText = name,
+                    rightText = expertName,
                     onClick = { nameClick = true }
                 )
 
@@ -166,7 +166,7 @@ private fun CertificationScreen(activity: Activity) {
     }
 
     if (confirmClick) {
-        saveToSharedPreferences(activity, name, job)
+        saveToSharedPreferences(activity, expertName, job)
 
         val intent = Intent(activity, MeActivity::class.java)
         activity.startActivity(intent)
@@ -174,10 +174,10 @@ private fun CertificationScreen(activity: Activity) {
     }
 
     if (nameClick) {
-        NameInputDialog(initialName = "",
+        ExpertNameInputDialog(initialName = "",
             onDismiss = { nameClick = false },
-            onConfirm = { newName ->
-                name = newName
+            onConfirm = { newExpertName ->
+                expertName = newExpertName
                 nameClick = false })
     }
 
@@ -205,25 +205,25 @@ private fun CertificationScreen(activity: Activity) {
 }
 
 @Composable
-fun NameInputDialog(
+fun ExpertNameInputDialog(
     initialName: String,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var name by remember { mutableStateOf(TextFieldValue(initialName)) }
+    var expertName by remember { mutableStateOf(TextFieldValue(initialName)) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = { Text(text = "修改名字") },
         text = {
             TextField(
-                value = name,
-                onValueChange = { name = it },
+                value = expertName,
+                onValueChange = { expertName = it },
                 placeholder = { Text(text = "输入真实姓名", color = Color.Gray) }
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(name.text) }) {
+            Button(onClick = { onConfirm(expertName.text) }) {
                 Text(text = "确定")
             }
         },
@@ -267,11 +267,11 @@ fun JobInputDialog(
 }
 
 
-fun saveToSharedPreferences(activity: Activity, name: String, job: String) {
+fun saveToSharedPreferences(activity: Activity, expertName: String, job: String) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
-    editor.putString("name", name)
+    editor.putString("expertName", expertName)
     editor.putString("job", job)
     editor.apply()
 }

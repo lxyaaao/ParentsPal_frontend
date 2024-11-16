@@ -1,16 +1,14 @@
 package com.example.myapplication
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,12 +34,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.myapplication.api.RegisterRequest
+import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import retrofit2.Response
+import retrofit2.Call
+import retrofit2.Callback
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,8 +131,13 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
                     if (tele.length == 11) {
-                        saveLoginStatus(activity, true)
-                        onLoginSuccess()
+                        if (registerUser(name, tele, password, activity)) {
+                            saveLoginStatus(activity, true)
+                            saveTele(activity, tele)
+                            onLoginSuccess()
+                        } else {
+                            errorDialog = true
+                        }
                     } else {
                         errorDialog = true
                     }
@@ -166,4 +172,14 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
             },
         )
     }
+}
+
+fun registerUser(name: String, phoneNumber: String, password: String, activity: Activity): Boolean {
+    val registerRequest = RegisterRequest(
+        name = name,
+        phoneNumber = phoneNumber,
+        password = password
+    )
+
+    return true
 }

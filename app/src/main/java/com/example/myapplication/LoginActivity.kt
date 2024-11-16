@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.LoginRequest
-import com.example.myapplication.api.RegisterRequest
 import com.example.myapplication.api.RetrofitClient
 import retrofit2.Response
 import retrofit2.Call
@@ -171,7 +170,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                 val loginResponse = response.body()
                 if (loginResponse != null) {
                     if (loginResponse.status) {
-                        saveInfo(activity, phoneNumber)
+                        saveTele(activity, phoneNumber)
                         saveLoginStatus(activity, true)
                         onLoginSuccess()
                     } else {
@@ -197,7 +196,7 @@ fun saveLoginStatus(activity: Activity, isLoggedIn: Boolean) {
     editor.apply()
 }
 
-fun saveInfo(activity: Activity, phoneNumber: String) {
+fun saveTele(activity: Activity, phoneNumber: String) {
     val sharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()

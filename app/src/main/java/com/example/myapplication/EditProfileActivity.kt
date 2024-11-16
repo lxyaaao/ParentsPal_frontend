@@ -11,22 +11,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
@@ -41,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
@@ -58,9 +49,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class EditProfileActivity : ComponentActivity() {
@@ -80,8 +68,8 @@ class EditProfileActivity : ComponentActivity() {
 private fun EditProfileScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var profileClick by remember { mutableStateOf(false) }
-    var nickClick by remember { mutableStateOf(false) }
-    var nickname by remember { mutableStateOf("默认昵称") }
+    var nameClick by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("宝宝名字") }
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
@@ -127,11 +115,26 @@ private fun EditProfileScreen(activity: Activity) {
                 Divider(color = Color.LightGray, thickness = 1.dp)
 
                 ButtonWithTwoTexts(
-                    leftText = "昵称",
-                    rightText = sharedPreferences.getString("nickname", "默认昵称") ?: "默认昵称",
-                    onClick = { nickClick = true }
+                    leftText = "名字",
+                    rightText = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字",
+                    onClick = { nameClick = true }
                 )
 
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "性别",
+                    rightText = " ",
+                    onClick = { }
+                )
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "生日",
+                    rightText = " ",
+                    onClick = { }
+                )
             }
         }
     )
@@ -163,13 +166,13 @@ private fun EditProfileScreen(activity: Activity) {
         )
     }
 
-    if (nickClick) {
-        NicknameInputDialog(initialNickname = "",
-            onDismiss = { nickClick = false },
-            onConfirm = { newNickname ->
-                nickname = newNickname
-                saveNicknameToSharedPreferences(activity, newNickname)
-                nickClick = false })
+    if (nameClick) {
+        NameInputDialog(initialName = "",
+            onDismiss = { nameClick = false },
+            onConfirm = { newName ->
+                name = newName
+                saveNameToSharedPreferences(activity, newName)
+                nameClick = false })
     }
 }
 
@@ -218,25 +221,25 @@ fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit)
 }
 
 @Composable
-fun NicknameInputDialog(
-    initialNickname: String,
+fun NameInputDialog(
+    initialName: String,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var nickname by remember { mutableStateOf(TextFieldValue(initialNickname)) }
+    var name by remember { mutableStateOf(TextFieldValue(initialName)) }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text(text = "修改昵称") },
+        title = { Text(text = "修改名字") },
         text = {
             TextField(
-                value = nickname,
-                onValueChange = { nickname = it },
-                placeholder = { Text(text = "输入新昵称", color = Color.Gray) }
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text(text = "输入新名字", color = Color.Gray) }
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(nickname.text) }) {
+            Button(onClick = { onConfirm(name.text) }) {
                 Text(text = "确定")
             }
         },
@@ -248,16 +251,16 @@ fun NicknameInputDialog(
     )
 }
 
-fun saveNicknameToSharedPreferences(activity: Activity, nickname: String) {
+fun saveNameToSharedPreferences(activity: Activity, name: String) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
-    editor.putString("nickname", nickname)
+    editor.putString("name", name)
     editor.apply()
 }
 
-fun getNicknameFromSharedPreferences(activity: Activity): String {
+fun getNameFromSharedPreferences(activity: Activity): String {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    return sharedPreferences.getString("nickname", "默认昵称") ?: "默认昵称"
+    return sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
 }

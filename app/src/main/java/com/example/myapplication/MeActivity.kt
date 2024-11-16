@@ -1,17 +1,14 @@
 package com.example.myapplication
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,10 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -90,13 +85,13 @@ private fun MeScreen(activity: Activity) {
 
 @Composable
 private fun MeMainScreen(activity: Activity) {
-    val nickname = getNicknameFromSharedPreferences(activity)
+    val name = getNameFromSharedPreferences(activity)
 
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(60.dp))
         ProfileSection(
             avatarResId = R.drawable.baseline_account_circle_24,
-            nickname = nickname,
+            name = name,
             activity
         )
 
@@ -151,7 +146,7 @@ private fun MeMainScreen(activity: Activity) {
 }
 
 @Composable
-fun ProfileSection(avatarResId: Int, nickname: String, activity: Activity) {
+fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
     var showImage by remember { mutableStateOf(false) }  // 控制大图是否显示
     var showEditButton by remember { mutableStateOf(false) }  // 控制“编辑资料”按钮是否显示
 
@@ -177,7 +172,7 @@ fun ProfileSection(avatarResId: Int, nickname: String, activity: Activity) {
 
         // 昵称
         Text(
-            text = nickname,
+            text = name,
             fontSize = 20.sp,
             modifier = Modifier
                 .align(Alignment.CenterVertically) // 垂直居中对齐

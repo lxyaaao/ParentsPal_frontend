@@ -188,7 +188,7 @@ fun AddShareContent(activity: Activity, checkClick: Boolean) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
     var MyShare by remember { mutableStateOf(loadShare(sharedPreferences)) }
-    val nickname = getNicknameFromSharedPreferences(activity)
+    val name = getNameFromSharedPreferences(activity)
     val calendar = Calendar.getInstance()
     val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(calendar.time)
     var content by remember { mutableStateOf("") }
@@ -213,7 +213,7 @@ fun AddShareContent(activity: Activity, checkClick: Boolean) {
 //              add ID of each blog to get the data easily
 //              NOW: no ID, with bug (can't add the newShare to MyShare list)
 //              wait Back-end to give data directly with ID and their content
-//        val newShare = BlogContent(R.drawable.baseline_account_circle_24, nickname, content, listOf(), currentDate)
+//        val newShare = BlogContent(R.drawable.baseline_account_circle_24, name, content, listOf(), currentDate)
 //        MyShare = MyShare + newShare
 //        val editor = sharedPreferences.edit()
 //        val json = Gson().toJson(MyShare)
