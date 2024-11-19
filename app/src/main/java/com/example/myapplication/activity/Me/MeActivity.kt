@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.activity.Me
 
 import android.app.Activity
 import android.content.Intent
@@ -49,6 +49,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.myapplication.R
+import com.example.myapplication.activity.Blog.BlogMineActivity
+import com.example.myapplication.activity.Main.BottomNavigationBar
+import com.example.myapplication.activity.Main.DailyLogActivity
+import com.example.myapplication.activity.Main.HomeScreen
+import com.example.myapplication.activity.Main.NavItem
+import com.example.myapplication.activity.Main.QuestionAnswerScreen
+import com.example.myapplication.activity.Main.ScrollContent
+import com.example.myapplication.activity.Main.ShareScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class MeActivity : ComponentActivity() {

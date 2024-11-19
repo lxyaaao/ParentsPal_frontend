@@ -1,9 +1,8 @@
-package com.example.myapplication
+package com.example.myapplication.activity.Main
 
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -38,11 +37,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.api.RegisterRequest
-import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import retrofit2.Response
-import retrofit2.Call
-import retrofit2.Callback
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

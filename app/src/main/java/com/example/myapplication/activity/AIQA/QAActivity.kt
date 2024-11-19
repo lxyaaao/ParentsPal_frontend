@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.activity.AIQA
 
 import android.app.Activity
 import android.content.Intent
@@ -47,6 +47,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.activity.Main.MainActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.myapplication.activity.Me
 
 import android.app.Activity
 import android.content.Context
@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class EditProfileActivity : ComponentActivity() {

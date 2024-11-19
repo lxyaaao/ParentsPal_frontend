@@ -15,49 +15,49 @@
         android:theme="@style/Theme.MyApplication"
         tools:targetApi="31">
         <activity
-            android:name=".UserListActivity"
+            android:name=".activity.Me.UserListActivity"
             android:exported="false" />
         <activity
-            android:name=".AccountActivity"
+            android:name=".activity.Me.AccountActivity"
             android:exported="false" />
         <activity
-            android:name=".SignUpActivity"
+            android:name=".activity.Main.SignUpActivity"
             android:exported="false" />
         <activity
-            android:name=".SettingActivity"
+            android:name=".activity.Me.SettingActivity"
             android:exported="false" />
         <activity
-            android:name=".BlogAddActivity"
+            android:name=".activity.Blog.BlogAddActivity"
             android:exported="false" />
         <activity
-            android:name=".BlogMineActivity"
+            android:name=".activity.Blog.BlogMineActivity"
             android:exported="false" />
         <activity
-            android:name=".DailyLogActivity"
+            android:name=".activity.Main.DailyLogActivity"
             android:exported="false" />
         <activity
-            android:name=".MemoActivity"
+            android:name=".activity.Main.MemoActivity"
             android:exported="false" />
         <activity
-            android:name=".SearchResultActivity"
+            android:name=".activity.Blog.SearchResultActivity"
             android:exported="false" />
         <activity
-            android:name=".SearchActivity"
+            android:name=".activity.Blog.SearchActivity"
             android:exported="false" />
         <activity
-            android:name=".CertificationActivity"
+            android:name=".activity.Me.CertificationActivity"
             android:exported="false" />
         <activity
-            android:name=".EditProfileActivity"
+            android:name=".activity.Me.EditProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".MeActivity"
+            android:name=".activity.Me.MeActivity"
             android:exported="false" />
         <activity
-            android:name=".QAActivity"
+            android:name=".activity.AIQA.QAActivity"
             android:exported="false" />
         <activity
-            android:name=".BlogActivity"
+            android:name=".activity.Blog.BlogActivity"
             android:exported="false"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyApplication" /> <!-- <activity -->
@@ -65,7 +65,7 @@
         <!-- android:exported="false" -->
         <!-- android:label="@string/title_activity_login" /> -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".activity.Main.LoginActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyApplication">
@@ -76,7 +76,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.Main.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyApplication">
