@@ -41,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.theme.MyApplicationTheme
@@ -108,7 +109,9 @@ private fun DailyLogScreen(activity: Activity) {
                     .padding(paddingValues)
             ) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
                 ) {
                     items(checkIns.reversed()) { checkIn ->
                         CheckInCard(checkIn) {
@@ -130,8 +133,8 @@ private fun DailyLogScreen(activity: Activity) {
 
     if (addClick) {
         AddCheckInDialog(onDismiss = { addClick = false },
-            onAdd = { date, content ->
-                val newCheckIn = CheckIn(date, content)
+            onAdd = { date, height, weight ->
+                val newCheckIn = CheckIn(date, height, weight)
                 checkIns = checkIns + newCheckIn // 添加新记录
                 saveCheckIns(sharedPreferences, checkIns) // 更新存储
             })
@@ -140,9 +143,10 @@ private fun DailyLogScreen(activity: Activity) {
 }
 
 @Composable
-fun AddCheckInDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
+fun AddCheckInDialog(onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
     var date by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
+    var weight by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -155,17 +159,22 @@ fun AddCheckInDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit) {
                     label = { Text("输入日期") }
                 )
                 TextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("输入内容") }
+                    value = height,
+                    onValueChange = { height = it },
+                    label = { Text("输入身高(cm)") }
+                )
+                TextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = { Text("输入体重(kg)") }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (date.isNotBlank() && content.isNotBlank()) {
-                        onAdd(date, content) // 调用添加函数
+                    if (date.isNotBlank() && height.isNotBlank() && weight.isNotBlank()) {
+                        onAdd(date, height, weight) // 调用添加函数
                         onDismiss() // 关闭对话框
                     }
                 }
@@ -202,7 +211,8 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
                 Icon(Icons.Default.Delete, contentDescription = "删除打卡记录")
             }
         }
-        Text(text = checkIn.content)
+        Text(text = "身高： ${checkIn.height} cm")
+        Text(text = "体重： ${checkIn.weight} kg")
     }
 
     if (showDialog) {
@@ -240,8 +250,8 @@ fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) 
     editor.putString("checkins", json).apply()
 }
 
-data class CheckIn(val date: String, val content: String) {
+data class CheckIn(val date: String, val height: String, val weight: String) {
     fun toStringRepresentation(): String {
-        return "日期: $date   打卡内容: $content"
+        return "日期: $date   身高: $height   身高: $weight"
     }
 }

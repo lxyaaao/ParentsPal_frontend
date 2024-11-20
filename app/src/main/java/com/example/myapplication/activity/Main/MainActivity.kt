@@ -306,7 +306,7 @@ fun getCheckin(activity: Activity): String {
     val StringBuilder = StringBuilder()
     for (i in checkIns.indices.reversed()) {
         val checkIn = checkIns[i]
-        StringBuilder.append("${checkIn.date} ${checkIn.content}\n")
+        StringBuilder.append("${checkIn.date}  身高:${checkIn.height}cm 体重:${checkIn.weight}kg\n")
     }
     val String = StringBuilder.toString()
 
