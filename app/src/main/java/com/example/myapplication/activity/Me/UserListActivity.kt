@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,9 +38,9 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.R
+import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class UserListActivity : ComponentActivity() {
@@ -130,7 +132,7 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
                             ) {
                                 val users: List<User> = FollowingUserList()
                                 items(users) { user ->
-                                    UserListItem(user = user)
+                                    UserListItem(user = user, activity)
                                 }
                             }
                         }
@@ -143,7 +145,7 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
                             ) {
                                 val users: List<User> = FollowingUserList()
                                 items(users) { user ->
-                                    UserListItem(user = user)
+                                    UserListItem(user = user, activity)
                                 }
                             }
                         }
@@ -160,12 +162,19 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
 }
 
 @Composable
-fun UserListItem(user: User) {
+fun UserListItem(user: User, activity: Activity) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
             .border(BorderStroke(1.dp, Color.LightGray)) // 边框
+            .clickable {
+                val intent = Intent(activity, QAActivity::class.java)
+                intent.putExtra("type", "user")
+                intent.putExtra("username", user.username)
+                activity.startActivity(intent)
+                activity.finish()
+            } // Handle click
     ) {
         Row(
             modifier = Modifier
