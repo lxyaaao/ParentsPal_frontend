@@ -49,23 +49,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.activity.Main.MainActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils
+import com.example.myapplication.utils.NetworkUtils.sendAIRequest
+import com.example.myapplication.utils.NetworkUtils.sendPostRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
-import java.io.OutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+
+object ConversationInfo {
+    var conversationType: String? = null
+    var userName: String? = null
+}
 
 
 class QAActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ConversationInfo.conversationType = intent.getStringExtra("type")
+        ConversationInfo.userName = intent.getStringExtra("username")
         setContent {
             MyApplicationTheme {
                 QAScreen(this)
@@ -75,13 +84,20 @@ class QAActivity : ComponentActivity() {
     }
 }
 
+
+fun isUserConversation(): Boolean {
+    return ConversationInfo.conversationType == "user" && ConversationInfo.userName != null
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QAScreen(activity: Activity) {
 //    val navController = rememberNavController()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Scaffold(
-        modifier = Modifier.imePadding().nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = Modifier
+            .imePadding()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -90,7 +106,7 @@ private fun QAScreen(activity: Activity) {
                 ),
                 title = {
                     Text(
-                        "Q&A",
+                        if (isUserConversation()) ConversationInfo.userName!! else "AI",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -153,8 +169,10 @@ fun ConversationCard(item: ConversationItem) {
             .fillMaxWidth()
             .padding(8.dp)
             .background(
+//                TODO: User name
                 color = if (item.userName == "User") MaterialTheme.colorScheme.primaryContainer else Color.White,
-                shape = RoundedCornerShape(8.dp))
+                shape = RoundedCornerShape(8.dp)
+            )
             .clickable { /* Handle click */ }
             .padding(16.dp)
 
@@ -202,64 +220,37 @@ fun ConversationList(conversations: List<ConversationItem>, listState: LazyListS
     }
 }
 
-suspend fun sendPostRequest(message: String, conversation: String = ""): String {
-    return withContext(Dispatchers.IO) {
-        val url = URL("http://parentspal.natapp1.cc/v1/chat-messages")
-        val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Authorization", "Bearer app-2Z15tg459MeUA12SSjKuoyYt")
-        connection.setRequestProperty("Content-Type", "application/json; utf-8")
-        connection.setRequestProperty("Accept", "application/json")
-        connection.doOutput = true
+fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
+    val conversationItems = mutableListOf<ConversationItem>()
+    val jsonObject = JSONObject(jsonResponse)
+    val dataArray: JSONArray = jsonObject.getJSONArray("data")
 
-        val jsonInputString = """
-            {
-                "inputs": {},
-                "query": "$message",
-                "response_mode": "blocking",
-                "conversation_id": "$conversation",
-                "user": "随便写一个"
-            }
-        """.trimIndent()
-
-        try {
-            connection.outputStream.use { os: OutputStream ->
-                val input = jsonInputString.toByteArray()
-                os.write(input, 0, input.size)
-            }
-
-            val responseCode = connection.responseCode
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
-            } else {
-                connection.errorStream.use { it.reader().use { reader -> reader.readText() } }
-            }
-        } catch (e: Exception) {
-            "Error: ${e.message}"
-        } finally {
-            connection.disconnect()
-        }
+    for (i in 0 until dataArray.length()) {
+        val messageObject = dataArray.getJSONObject(i)
+        val senderName = messageObject.getString("sender_name")
+        val content = messageObject.getString("content")
+        val createdAt = messageObject.getString("created_at")
+        conversationItems.add(ConversationItem(senderName, content, createdAt))
     }
+
+    return conversationItems
 }
 
-suspend fun sendGetRequest(urlString: String): String {
-    return withContext(Dispatchers.IO) {
-        val url = URL(urlString)
-        val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-
-        try {
-            connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
-        } catch (e: Exception) {
-            "Error: ${e.message}"
-        } finally {
-            connection.disconnect()
-        }
+fun loadConversationHistory(username1: String, username2: String): List<ConversationItem> {
+    var response = ""
+    CoroutineScope(Dispatchers.Main).launch {
+        val apiString =
+            "api/conversations/messages-between-users?username1=$username1&username2=$username2"
+        response = NetworkUtils.sendGetRequest(apiString)
+        // Handle the response here
+    }
+    return try {
+        parseConversationHistory(response)
+    } catch (e: JSONException) {
+        e.printStackTrace()
+        emptyList()
     }
 }
-
-
-
 
 @Composable
 private fun ConversationScreen(activity: Activity) {
@@ -269,6 +260,15 @@ private fun ConversationScreen(activity: Activity) {
     val listState = rememberLazyListState()
     val conversationId = remember { mutableStateOf("") }
 
+    LaunchedEffect(Unit) {
+        if (isUserConversation()) {
+            val history = loadConversationHistory("User", ConversationInfo.userName!!)
+            conversations.value = history
+        }
+    }
+
+    val conversationName = if (isUserConversation()) ConversationInfo.userName!! else "Bot"
+
     LaunchedEffect(conversations.value.size) {
         listState.animateScrollToItem(conversations.value.size)
     }
@@ -276,7 +276,9 @@ private fun ConversationScreen(activity: Activity) {
     Box(modifier = Modifier.padding(top = 96.dp)) {
 //        Spacer(modifier = Modifier.height(64.dp))
         Box(
-            modifier = Modifier.fillMaxSize().padding(bottom = 64.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 64.dp)
         ) {
             ConversationList(conversations = conversations.value, listState = listState)
         }
@@ -298,22 +300,39 @@ private fun ConversationScreen(activity: Activity) {
                     IconButton(onClick = {
                         currentText.value = textState.value
                         textState.value = ""
-                        conversations.value = conversations.value + ConversationItem("User", currentText.value, SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()))
+                        conversations.value = conversations.value + ConversationItem(
+                            "User",
+                            currentText.value,
+                            SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                        )
 
 
                         CoroutineScope(Dispatchers.Main).launch {
 //                            val response = sendGetRequest("http://www.baidu.com")
-                            val response = sendPostRequest(currentText.value, conversationId.value)
-                            val jsonResponse = try {
-                                JSONObject(response)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                JSONObject()
+                            if (isUserConversation()) {
+                                val apiString =
+                                    "/api/conversations/message?senderUsername=${"User"}&receiverUsername=${conversationName}&content=${currentText.value}"
+                                val response =
+                                    sendPostRequest(apiString)
+
+                            } else {
+                                val response =
+                                    sendAIRequest(currentText.value, conversationId.value)
+                                val jsonResponse = try {
+                                    JSONObject(response)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    JSONObject()
+                                }
+                                conversationId.value = jsonResponse.optString("conversation_id", "")
+                                val responseText = jsonResponse.optString("answer", "")
+                                // Handle the response here
+                                conversations.value = conversations.value + ConversationItem(
+                                    conversationName,
+                                    responseText,
+                                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                                )
                             }
-                            conversationId.value = jsonResponse.optString("conversation_id", "")
-                            val responseText = jsonResponse.optString("answer", "")
-                            // Handle the response here
-                            conversations.value = conversations.value + ConversationItem("Bot", responseText, SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date()))
                         }
                     }) {
                         Icon(
