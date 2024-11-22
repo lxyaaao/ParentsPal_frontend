@@ -37,10 +37,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.api.Baby
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.LoginRequest
 import com.example.myapplication.api.RetrofitClient
+import com.google.gson.Gson
 import retrofit2.Response
 import retrofit2.Call
 import retrofit2.Callback
@@ -81,7 +83,6 @@ class LoginActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
-    // Replace with actual login UI and logic
     var tele by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -136,10 +137,9 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize() // 占满整个屏幕
-                    .padding(bottom = 16.dp) // 保证按钮不会紧贴屏幕底部，留下一些距离
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp)
             ) {
-                // 透明背景按钮，位于底部中央
                 TextButton(
                     onClick = {
                         // 跳转到下一个界面
@@ -148,12 +148,12 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                         activity.finish()
                     },
                     modifier = Modifier
-                        .align(Alignment.BottomCenter) // 保证按钮在屏幕底部中央
+                        .align(Alignment.BottomCenter)
                 ) {
                     Text(
                         text = "没有账户？点我注册",
-                        fontSize = 12.sp, // 设置较小字体
-                        color = Color.Gray // 设置文字颜色
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 }
             }
@@ -171,6 +171,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                 if (loginResponse != null) {
                     if (loginResponse.status) {
                         saveTele(activity, phoneNumber)
+                        saveUser(activity, loginResponse.parentId, loginResponse.babies)
                         saveLoginStatus(activity, true)
                         onLoginSuccess()
                     } else {
@@ -201,5 +202,30 @@ fun saveTele(activity: Activity, phoneNumber: String) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
     editor.putString("phoneNumber", phoneNumber)
+    editor.apply()
+}
+
+fun saveUser(activity: Activity, parentId: Int, babies: List<Baby>) {
+    val sharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
+    editor.putInt("parentId", parentId)
+    editor.putString("babies", Gson().toJson(babies))
+    if (babies.isNotEmpty()) {
+        val firstBaby = babies[0]
+
+        val babyId: Int = firstBaby.id
+        val babyName: String = firstBaby.name
+        val babyGender: String = firstBaby.gender
+        val babyBirthdate: String = firstBaby.birthdate
+        val babyPhotoUrl: String = firstBaby.photoUrl
+
+        editor.putInt("babyId", babyId)
+        editor.putString("name", babyName)
+        editor.putString("babyGender", babyGender)
+        editor.putString("babyBirthdate", babyBirthdate)
+        editor.putString("babyPhotoUrl", babyPhotoUrl)
+
+    }
     editor.apply()
 }

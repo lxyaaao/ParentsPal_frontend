@@ -67,6 +67,7 @@ private fun AccountScreen(activity: Activity) {
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val id = sharedPreferences.getInt("parentId", 0) ?: 0
     val phoneNumber = sharedPreferences.getString("phoneNumber", "") ?: ""
 
     Scaffold(
@@ -105,7 +106,7 @@ private fun AccountScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "ID",
-                    rightText = " ",
+                    rightText = "$id",
                     onClick = {}
                 )
 

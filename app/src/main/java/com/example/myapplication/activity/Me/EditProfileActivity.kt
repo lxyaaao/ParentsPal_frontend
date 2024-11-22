@@ -70,9 +70,12 @@ private fun EditProfileScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var profileClick by remember { mutableStateOf(false) }
     var nameClick by remember { mutableStateOf(false) }
-    var name by remember { mutableStateOf("宝宝名字") }
+    var genderClick by remember { mutableStateOf(false) }
+    var birthClick by remember { mutableStateOf(false) }
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    var name by remember { mutableStateOf(sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字") }
 
     Scaffold(
         topBar = {
@@ -117,7 +120,7 @@ private fun EditProfileScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "名字",
-                    rightText = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字",
+                    rightText = name,
                     onClick = { nameClick = true }
                 )
 
@@ -125,16 +128,16 @@ private fun EditProfileScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "性别",
-                    rightText = " ",
-                    onClick = { }
+                    rightText = sharedPreferences.getString("babyGender", "") ?: "",
+                    onClick = { genderClick = true }
                 )
 
                 Divider(color = Color.LightGray, thickness = 1.dp)
 
                 ButtonWithTwoTexts(
                     leftText = "生日",
-                    rightText = " ",
-                    onClick = { }
+                    rightText = sharedPreferences.getString("babyBirthdate", "") ?: "",
+                    onClick = { birthClick = true }
                 )
             }
         }
@@ -168,12 +171,30 @@ private fun EditProfileScreen(activity: Activity) {
     }
 
     if (nameClick) {
-        NameInputDialog(initialName = "",
+        NameInputDialog(initialName = name,
             onDismiss = { nameClick = false },
             onConfirm = { newName ->
                 name = newName
                 saveNameToSharedPreferences(activity, newName)
                 nameClick = false })
+    }
+
+    if (genderClick) {
+        GenderInputDialog(onDismiss = { genderClick = false },
+            onConfirm = { newGender ->
+                val editor = sharedPreferences.edit()
+                editor.putString("babyGender", newGender)
+                editor.apply()
+                genderClick = false })
+    }
+
+    if (birthClick) {
+        BirthInputDialog(onDismiss = { birthClick = false },
+            onConfirm = { newBirthdate ->
+                val editor = sharedPreferences.edit()
+                editor.putString("babyBirthdate", newBirthdate)
+                editor.apply()
+                birthClick = false })
     }
 }
 
@@ -241,6 +262,63 @@ fun NameInputDialog(
         },
         confirmButton = {
             Button(onClick = { onConfirm(name.text) }) {
+                Text(text = "确定")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = "取消")
+            }
+        }
+    )
+}
+
+@Composable
+fun GenderInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = "选择性别") },
+        text = { },
+        confirmButton = {
+            Button(onClick = { onConfirm("Male") }) {
+                Text(text = "Male")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onConfirm("Female") }) {
+                Text(text = "Female")
+            }
+        }
+    )
+}
+
+@Composable
+fun BirthInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var date by remember { mutableStateOf(TextFieldValue("")) }
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = "填写生日") },
+        text = {
+            TextField(
+                value = date,
+                onValueChange = { date = it },
+                placeholder = { Text(text = "输入生日，格式如 0000-00-00", color = Color.Gray) }
+            )
+        },
+        confirmButton = {
+            Button(onClick = {
+                if (date.text.length == 10 &&  date.text[4] == '-' && date.text[7] == '-') {
+                    onConfirm(date.text)
+                } else {
+                    date = TextFieldValue("")
+                }}) {
                 Text(text = "确定")
             }
         },
