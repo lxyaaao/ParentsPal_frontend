@@ -59,6 +59,7 @@ import com.example.myapplication.utils.NetworkUtils.sendPostRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -241,19 +242,17 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
     return conversationItems
 }
 
-fun loadConversationHistory(username1: String, username2: String): List<ConversationItem> {
-    var response = ""
-    CoroutineScope(Dispatchers.Main).launch {
+suspend fun loadConversationHistory(username1: String, username2: String): List<ConversationItem> {
+    return withContext(Dispatchers.IO) {
         val apiString =
             "api/conversations/messages-between-users?username1=$username1&username2=$username2"
-        response = NetworkUtils.sendGetRequest(apiString)
-        // Handle the response here
-    }
-    return try {
-        parseConversationHistory(response)
-    } catch (e: JSONException) {
-        e.printStackTrace()
-        emptyList()
+        val response = NetworkUtils.sendGetRequest(apiString)
+        try {
+            parseConversationHistory(response)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            emptyList()
+        }
     }
 }
 

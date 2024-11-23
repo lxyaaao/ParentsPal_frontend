@@ -75,6 +75,7 @@ object NetworkUtils {
         return withContext(Dispatchers.IO) {
             val urlString = "http://parentspal.natapp1.cc/"
             val url = URL(urlString + apiString)
+
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
 
