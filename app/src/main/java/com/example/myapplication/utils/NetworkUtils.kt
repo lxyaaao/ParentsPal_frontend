@@ -9,11 +9,12 @@ import java.net.URL
 object NetworkUtils {
     suspend fun sendPostRequest(apiString: String): String {
         return withContext(Dispatchers.IO) {
-            val urlString = "http://parentspal.natapp1.cc/v1/"
+            val urlString = "http://parentspal.natapp1.cc/"
             val url = URL(urlString + apiString)
+
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
-
+            print(connection)
             try {
                 connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
             } catch (e: Exception) {
@@ -72,7 +73,7 @@ object NetworkUtils {
 
     suspend fun sendGetRequest(apiString: String): String {
         return withContext(Dispatchers.IO) {
-            val urlString = "http://parentspal.natapp1.cc/v1/"
+            val urlString = "http://parentspal.natapp1.cc/"
             val url = URL(urlString + apiString)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"

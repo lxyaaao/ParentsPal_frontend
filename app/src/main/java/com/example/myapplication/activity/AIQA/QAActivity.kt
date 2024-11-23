@@ -1,7 +1,9 @@
 package com.example.myapplication.activity.AIQA
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,8 +40,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,6 +79,7 @@ class QAActivity : ComponentActivity() {
         enableEdgeToEdge()
         ConversationInfo.conversationType = intent.getStringExtra("type")
         ConversationInfo.userName = intent.getStringExtra("username")
+//        ConversationInfo.userName = "Alice"
         setContent {
             MyApplicationTheme {
                 QAScreen(this)
@@ -163,14 +168,14 @@ fun BackToMainButton(activity: Activity) {
 data class ConversationItem(val userName: String, val lastMessage: String, val timestamp: String)
 
 @Composable
-fun ConversationCard(item: ConversationItem) {
+fun ConversationCard(item: ConversationItem, myName: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .background(
 //                TODO: User name
-                color = if (item.userName == "User") MaterialTheme.colorScheme.primaryContainer else Color.White,
+                color = if (item.userName == myName) MaterialTheme.colorScheme.primaryContainer else Color.White,
                 shape = RoundedCornerShape(8.dp)
             )
             .clickable { /* Handle click */ }
@@ -184,7 +189,7 @@ fun ConversationCard(item: ConversationItem) {
                 text = item.userName,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = if (item.userName == "User") Modifier.align(Alignment.End) else Modifier
+                modifier = if (item.userName == myName) Modifier.align(Alignment.End) else Modifier
             )
             Text(
                 text = item.lastMessage,
@@ -196,14 +201,14 @@ fun ConversationCard(item: ConversationItem) {
                 text = item.timestamp,
                 fontSize = 12.sp,
                 color = Color.LightGray,
-                modifier = if (item.userName == "User") Modifier.align(Alignment.End) else Modifier
+                modifier = if (item.userName == myName) Modifier.align(Alignment.End) else Modifier
             )
         }
     }
 }
 
 @Composable
-fun ConversationList(conversations: List<ConversationItem>, listState: LazyListState) {
+fun ConversationList(conversations: List<ConversationItem>, listState: LazyListState , myName: String) {
 
     LazyColumn(
         state = listState,
@@ -213,7 +218,7 @@ fun ConversationList(conversations: List<ConversationItem>, listState: LazyListS
     ) {
         conversations.forEach { conversation ->
             item {
-                ConversationCard(item = conversation)
+                ConversationCard(item = conversation, myName = myName)
             }
         }
 
@@ -259,10 +264,14 @@ private fun ConversationScreen(activity: Activity) {
     val conversations = remember { mutableStateOf(listOf<ConversationItem>()) }
     val listState = rememberLazyListState()
     val conversationId = remember { mutableStateOf("") }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    var myName by remember { mutableStateOf(sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字") }
+
 
     LaunchedEffect(Unit) {
         if (isUserConversation()) {
-            val history = loadConversationHistory("User", ConversationInfo.userName!!)
+            val history = loadConversationHistory(myName, ConversationInfo.userName!!)
             conversations.value = history
         }
     }
@@ -280,7 +289,7 @@ private fun ConversationScreen(activity: Activity) {
                 .fillMaxSize()
                 .padding(bottom = 64.dp)
         ) {
-            ConversationList(conversations = conversations.value, listState = listState)
+            ConversationList(conversations = conversations.value, listState = listState, myName)
         }
         Row(
             modifier = Modifier
@@ -301,7 +310,7 @@ private fun ConversationScreen(activity: Activity) {
                         currentText.value = textState.value
                         textState.value = ""
                         conversations.value = conversations.value + ConversationItem(
-                            "User",
+                            myName,
                             currentText.value,
                             SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                         )
@@ -311,9 +320,11 @@ private fun ConversationScreen(activity: Activity) {
 //                            val response = sendGetRequest("http://www.baidu.com")
                             if (isUserConversation()) {
                                 val apiString =
-                                    "/api/conversations/message?senderUsername=${"User"}&receiverUsername=${conversationName}&content=${currentText.value}"
+                                    "api/conversations/message?senderUsername=${myName}&receiverUsername=${conversationName}&content=${currentText.value}"
                                 val response =
                                     sendPostRequest(apiString)
+                                print(response)
+                                print("done")
 
                             } else {
                                 val response =
