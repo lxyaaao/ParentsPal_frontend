@@ -3,6 +3,7 @@ package com.example.myapplication.activity.Main
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -36,8 +37,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.api.Baby
 import com.example.myapplication.api.RegisterRequest
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendPostRequest
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+
+data class RegisterResponse(
+    val message: String,
+    val status: Boolean,
+    val parentId: Int,
+    val parentName: String,
+    val babies: List<Baby>?
+)
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,12 +144,12 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
                     if (tele.length == 11) {
-                        if (registerUser(name, tele, password, activity)) {
-                            saveLoginStatus(activity, true)
-                            saveTele(activity, tele)
-                            onLoginSuccess()
-                        } else {
-                            errorDialog = true
+                        CoroutineScope(Dispatchers.Main).launch{
+                            if (registerUser(name, tele, password, activity)) {
+                                saveLoginStatus(activity, true)
+                                saveTele(activity, tele)
+                                onLoginSuccess()
+                            }
                         }
                     } else {
                         errorDialog = true
@@ -169,12 +187,30 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
     }
 }
 
-fun registerUser(name: String, phoneNumber: String, password: String, activity: Activity): Boolean {
-    val registerRequest = RegisterRequest(
-        name = name,
-        phoneNumber = phoneNumber,
-        password = password
-    )
+suspend fun registerUser(name: String, phoneNumber: String, password: String, activity: Activity): Boolean {
+    val apiPath = "api/v1/appuser/register"
 
-    return true
+    val requestBody = JSONObject().apply {
+        put("name", name)
+        put("phoneNumber", phoneNumber)
+        put("password", password)
+    }
+
+    val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+    val gson = Gson()
+    val response = gson.fromJson(responseString, RegisterResponse::class.java)
+    println("Parsed response: $response")
+
+    if (response.status) {
+        val babiesList = response.babies ?: emptyList()
+        saveUser(activity, response.parentId, response.parentName, babiesList)
+        return true
+    } else {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    return false
 }

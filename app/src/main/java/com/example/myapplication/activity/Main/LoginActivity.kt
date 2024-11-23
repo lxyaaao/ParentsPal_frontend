@@ -171,7 +171,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                 if (loginResponse != null) {
                     if (loginResponse.status) {
                         saveTele(activity, phoneNumber)
-                        saveUser(activity, loginResponse.parentId, loginResponse.babies)
+                        saveUser(activity, loginResponse.parentId, loginResponse.parentName, loginResponse.babies)
                         saveLoginStatus(activity, true)
                         onLoginSuccess()
                     } else {
@@ -205,26 +205,38 @@ fun saveTele(activity: Activity, phoneNumber: String) {
     editor.apply()
 }
 
-fun saveUser(activity: Activity, parentId: Int, babies: List<Baby>) {
+fun saveUser(activity: Activity, parentId: Int, parentName: String, babies: List<Baby>) {
     val sharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
     editor.putInt("parentId", parentId)
+    editor.putString("name", parentName)
     editor.putString("babies", Gson().toJson(babies))
     if (babies.isNotEmpty()) {
         val firstBaby = babies[0]
 
-        val babyId: Int = firstBaby.id
+        val babyId: Int = firstBaby.id.toInt()
         val babyName: String = firstBaby.name
         val babyGender: String = firstBaby.gender
         val babyBirthdate: String = firstBaby.birthdate
         val babyPhotoUrl: String = firstBaby.photoUrl
 
         editor.putInt("babyId", babyId)
-        editor.putString("name", babyName)
+        editor.putString("babyName", babyName)
         editor.putString("babyGender", babyGender)
         editor.putString("babyBirthdate", babyBirthdate)
         editor.putString("babyPhotoUrl", babyPhotoUrl)
+
+        fetchGrowthTracking(activity, sharedPreferences, babyId)
+
+    } else {
+        editor.putInt("babyId", 0)
+        editor.putString("babyName", "")
+        editor.putString("babyGender", "")
+        editor.putString("babyBirthdate", "")
+        editor.putString("babyPhotoUrl", "")
+
+        fetchGrowthTracking(activity, sharedPreferences, 0)
 
     }
     editor.apply()

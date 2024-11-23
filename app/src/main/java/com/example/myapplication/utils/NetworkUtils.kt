@@ -25,7 +25,38 @@ object NetworkUtils {
         }
     }
 
+    suspend fun sendPostRequestWithRequest(apiString: String, requestBody: String): String {
+        return withContext(Dispatchers.IO) {
+            val urlString = "http://parentspal.natapp1.cc/"
+            val url = URL(urlString + apiString)
 
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            print(connection)
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            try {
+                connection.outputStream.use { outputStream ->
+                    outputStream.write(requestBody.toByteArray(Charsets.UTF_8))
+                    outputStream.flush()
+                }
+
+                val responseCode = connection.responseCode
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+                } else if (responseCode == HttpURLConnection.HTTP_CONFLICT) {
+                    connection.errorStream.use { it.reader().use { reader -> reader.readText() } }
+                } else {
+                    "Error: HTTP $responseCode"
+                }
+            } catch (e: Exception) {
+                "Error: ${e.message}"
+            } finally {
+                connection.disconnect()
+            }
+        }
+    }
 
 
 

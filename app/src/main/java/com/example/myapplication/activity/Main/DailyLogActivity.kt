@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -44,8 +45,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.api.Baby
+import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONException
+import java.time.LocalDate
+
+data class GrowthTracking(
+    val id: Long,
+    val height: Double,
+    val weight: Double,
+    val measurementDate: String,
+    val baby: Baby
+)
 
 class DailyLogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +85,9 @@ private fun DailyLogScreen(activity: Activity) {
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-
+    val babyId: Int = sharedPreferences.getInt("babyId", 0)
     var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
+
 
     Scaffold(
         topBar = {
@@ -237,6 +256,34 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
             }
         )
     }
+}
+
+fun fetchGrowthTracking(activity: Activity, sharedPreferences: SharedPreferences, babyId: Int) {
+    val apiString = "api/v1/babies/$babyId/growth"
+    CoroutineScope(Dispatchers.IO).launch {
+        val response = sendGetRequest(apiString)
+        try {
+            val gson = Gson()
+
+            val growthTrackingList: List<GrowthTracking> =
+                gson.fromJson(response, Array<GrowthTracking>::class.java).toList()
+
+            val newCheckIns =
+                growthTrackingList.map { tracking ->
+                    CheckIn(
+                        date = tracking.measurementDate.toString(),
+                        height = tracking.height.toString(),
+                        weight = tracking.weight.toString()
+                    )
+                }
+
+            saveCheckIns(sharedPreferences, newCheckIns.toList())
+
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+    }
+
 }
 
 fun loadCheckIns(sharedPreferences: SharedPreferences): List<CheckIn> {
