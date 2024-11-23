@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.activity.Main.MainActivity
+import com.example.myapplication.activity.Me.UserListActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils
 import com.example.myapplication.utils.NetworkUtils.sendAIRequest
@@ -153,7 +154,7 @@ private fun QAScreen(activity: Activity) {
 fun BackToMainButton(activity: Activity) {
 //    val context = LocalContext.current
     IconButton(onClick = {
-        val intent = Intent(activity, MainActivity::class.java)
+        val intent = if (isUserConversation()) Intent(activity, UserListActivity::class.java) else Intent(activity, MainActivity::class.java)
         activity.startActivity(intent)
         activity.overridePendingTransition(0, 0)
         activity.finish()
@@ -175,7 +176,6 @@ fun ConversationCard(item: ConversationItem, myName: String) {
             .fillMaxWidth()
             .padding(8.dp)
             .background(
-//                TODO: User name
                 color = if (item.userName == myName) MaterialTheme.colorScheme.primaryContainer else Color.White,
                 shape = RoundedCornerShape(8.dp)
             )
@@ -239,7 +239,7 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
         conversationItems.add(ConversationItem(senderName, content, createdAt))
     }
 
-    return conversationItems
+    return conversationItems.reversed()
 }
 
 suspend fun loadConversationHistory(username1: String, username2: String): List<ConversationItem> {
