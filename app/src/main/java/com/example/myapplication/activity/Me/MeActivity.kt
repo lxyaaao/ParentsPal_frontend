@@ -106,6 +106,14 @@ private fun MeMainScreen(activity: Activity) {
 
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(modifier = Modifier.height(24.dp))
+            ButtonWithBars("宝宝信息") {
+                val intent = Intent(activity, BabyActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }
+            Divider(color = Color.LightGray, thickness = 1.dp)
+
+            Spacer(modifier = Modifier.height(24.dp))
             ButtonWithBars("我的关注") {
                 val intent = Intent(activity, UserListActivity::class.java)
                 intent.putExtra("selectedTabIndex", 0)
@@ -130,8 +138,6 @@ private fun MeMainScreen(activity: Activity) {
                 val intent = Intent(activity, BlogMineActivity::class.java)
                 activity.startActivity(intent)
                 activity.finish()
-            }
-            ButtonWithBars("我的私信") {
             }
             Divider(color = Color.LightGray, thickness = 1.dp)
 

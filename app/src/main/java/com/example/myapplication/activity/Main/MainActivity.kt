@@ -190,7 +190,7 @@ fun HomeMainScreen(activity: Activity) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
-            title = "备忘录",
+            title = "闹钟",
             description = sharedPreferences.getString("memo", " ") ?: " ",
             onClick = {
                 val intent = Intent(activity, MemoActivity::class.java)
@@ -200,7 +200,7 @@ fun HomeMainScreen(activity: Activity) {
         )
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
-            title = "tips",
+            title = "疫苗",
             description = "xxx",
             onClick = {
             }

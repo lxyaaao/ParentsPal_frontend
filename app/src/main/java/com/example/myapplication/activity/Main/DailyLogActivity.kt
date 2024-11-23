@@ -49,12 +49,14 @@ import com.example.myapplication.api.Baby
 import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONException
+import org.json.JSONObject
 import java.time.LocalDate
 
 data class GrowthTracking(
@@ -151,18 +153,23 @@ private fun DailyLogScreen(activity: Activity) {
     }
 
     if (addClick) {
-        AddCheckInDialog(onDismiss = { addClick = false },
+        AddCheckInDialog(activity,
+            onDismiss = { addClick = false },
             onAdd = { date, height, weight ->
                 val newCheckIn = CheckIn(date, height, weight)
                 checkIns = checkIns + newCheckIn // 添加新记录
                 saveCheckIns(sharedPreferences, checkIns) // 更新存储
+                fetchGrowthTracking(activity, sharedPreferences, babyId)
             })
         }
 
 }
 
 @Composable
-fun AddCheckInDialog(onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
+fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val babyId: Int = sharedPreferences.getInt("babyId", 0)
     var date by remember { mutableStateOf("") }
     var height by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
@@ -192,9 +199,12 @@ fun AddCheckInDialog(onDismiss: () -> Unit, onAdd: (String, String, String) -> U
         confirmButton = {
             Button(
                 onClick = {
-                    if (date.isNotBlank() && height.isNotBlank() && weight.isNotBlank()) {
-                        onAdd(date, height, weight) // 调用添加函数
-                        onDismiss() // 关闭对话框
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (date.isNotBlank() && height.isNotBlank() && weight.isNotBlank()) {
+                            addCheckin(babyId, date, height, weight)
+                            onAdd(date, height, weight) // 调用添加函数
+                            onDismiss() // 关闭对话框
+                        }
                     }
                 }
             ) {
@@ -301,4 +311,17 @@ data class CheckIn(val date: String, val height: String, val weight: String) {
     fun toStringRepresentation(): String {
         return "日期: $date   身高: $height   身高: $weight"
     }
+}
+
+suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
+    val apiPath = "api/v1/babies/$babyId/growth"
+
+    val requestBody = JSONObject().apply {
+        put("weight", weight)
+        put("height", height)
+        put("measurementDate", date)
+    }
+
+    sendPostRequestWithRequest(apiPath, requestBody.toString())
+
 }

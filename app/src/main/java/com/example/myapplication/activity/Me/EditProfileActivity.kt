@@ -102,7 +102,6 @@ private fun EditProfileScreen(activity: Activity) {
             )
         },
         content = { paddingValues ->
-            // 主内容，确保遵守padding
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,29 +114,12 @@ private fun EditProfileScreen(activity: Activity) {
                     onClick = { profileClick = true }
                 )
 
-                // 分隔线
                 Divider(color = Color.LightGray, thickness = 1.dp)
 
                 ButtonWithTwoTexts(
                     leftText = "名字",
                     rightText = name,
-                    onClick = { nameClick = true }
-                )
-
-                Divider(color = Color.LightGray, thickness = 1.dp)
-
-                ButtonWithTwoTexts(
-                    leftText = "性别",
-                    rightText = sharedPreferences.getString("babyGender", "") ?: "",
-                    onClick = { genderClick = true }
-                )
-
-                Divider(color = Color.LightGray, thickness = 1.dp)
-
-                ButtonWithTwoTexts(
-                    leftText = "生日",
-                    rightText = sharedPreferences.getString("babyBirthdate", "") ?: "",
-                    onClick = { birthClick = true }
+                    onClick = {  }
                 )
             }
         }
@@ -242,93 +224,6 @@ fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit)
     }
 }
 
-@Composable
-fun NameInputDialog(
-    initialName: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var name by remember { mutableStateOf(TextFieldValue(initialName)) }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text(text = "修改名字") },
-        text = {
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                placeholder = { Text(text = "输入新名字", color = Color.Gray) }
-            )
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(name.text) }) {
-                Text(text = "确定")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = "取消")
-            }
-        }
-    )
-}
-
-@Composable
-fun GenderInputDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text(text = "选择性别") },
-        text = { },
-        confirmButton = {
-            Button(onClick = { onConfirm("Male") }) {
-                Text(text = "Male")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onConfirm("Female") }) {
-                Text(text = "Female")
-            }
-        }
-    )
-}
-
-@Composable
-fun BirthInputDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var date by remember { mutableStateOf(TextFieldValue("")) }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text(text = "填写生日") },
-        text = {
-            TextField(
-                value = date,
-                onValueChange = { date = it },
-                placeholder = { Text(text = "输入生日，格式如 0000-00-00", color = Color.Gray) }
-            )
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (date.text.length == 10 &&  date.text[4] == '-' && date.text[7] == '-') {
-                    onConfirm(date.text)
-                } else {
-                    date = TextFieldValue("")
-                }}) {
-                Text(text = "确定")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = "取消")
-            }
-        }
-    )
-}
 
 fun saveNameToSharedPreferences(activity: Activity, name: String) {
     val sharedPreferences: SharedPreferences =
