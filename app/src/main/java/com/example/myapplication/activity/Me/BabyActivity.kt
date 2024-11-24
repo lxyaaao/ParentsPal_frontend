@@ -86,7 +86,7 @@ private fun BabyScreen(activity: Activity) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var name by remember { mutableStateOf(sharedPreferences.getString("babyName", "宝宝名字") ?: "宝宝名字") }
+    var name by remember { mutableStateOf(sharedPreferences.getString("babyName", "") ?: "") }
     var babyGender by remember { mutableStateOf(sharedPreferences.getString("babyGender", "") ?: "") }
     var babyBirth by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
 
@@ -151,6 +151,10 @@ private fun BabyScreen(activity: Activity) {
             val parentId = sharedPreferences.getInt("parentId", 0)
             val babyId = sharedPreferences.getInt("babyId", 0)
 
+            name = sharedPreferences.getString("babyName", "") ?: ""
+            babyBirth = sharedPreferences.getString("babyBirthdate", "") ?: ""
+
+            println("id: ${babyId}, name: ${name}, birth: ${babyBirth}}")
             if (babyId == 0 && name != "" && babyBirth != "") {
                 CoroutineScope(Dispatchers.Main).launch {
                     addBaby(parentId, name, babyGender, babyBirth, activity)
