@@ -59,21 +59,30 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.time.LocalDate
 
-data class GrowthTracking(
-    val id: Long,
-    val height: Double,
-    val weight: Double,
-    val measurementDate: String,
-    val baby: Baby
+data class Alarm(
+    val activityType: String,
+    val alarmTime: String,
+    val frequency: String,
+    val active: Boolean
 )
 
-class DailyLogActivity : ComponentActivity() {
+data class AlarmResponse(
+    val id: Int,
+    val babyId: Int,
+    val activityType: String,
+    val alarmTime: String,
+    val frequency: String,
+    val recurring: Boolean,
+    val active: Boolean
+)
+
+class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                DailyLogScreen(this)
+                AlarmScreen(this)
             }
         }
     }
@@ -81,15 +90,14 @@ class DailyLogActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DailyLogScreen(activity: Activity) {
+private fun AlarmScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var addClick by remember { mutableStateOf(false) }
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
-    var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
-
+    var alarms by remember { mutableStateOf(loadAlarms(sharedPreferences)) }
 
     Scaffold(
         topBar = {
@@ -100,7 +108,7 @@ private fun DailyLogScreen(activity: Activity) {
                 ),
                 title = {
                     Text(
-                        "打卡记录",
+                        "闹钟提醒",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -134,11 +142,11 @@ private fun DailyLogScreen(activity: Activity) {
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    items(checkIns.reversed()) { checkIn ->
-                        CheckInCard(checkIn) {
+                    items(alarms.reversed()) { babyAlarm ->
+                        AlarmCard(babyAlarm) {
                             // 删除打卡记录
-                            checkIns = checkIns.filter { it != checkIn }
-                            saveCheckIns(sharedPreferences, checkIns) // 更新存储
+                            alarms = alarms.filter { it != babyAlarm }
+                            saveAlarms(sharedPreferences, alarms) // 更新存储
                         }
                     }
                 }
@@ -153,60 +161,56 @@ private fun DailyLogScreen(activity: Activity) {
     }
 
     if (addClick) {
-        AddCheckInDialog(activity,
+        AddAlarmDialog(activity,
             onDismiss = { addClick = false },
-            onAdd = { date, height, weight ->
-                val newCheckIn = CheckIn(date, height, weight)
-                checkIns = checkIns + newCheckIn // 添加新记录
-                saveCheckIns(sharedPreferences, checkIns) // 更新存储
-                fetchGrowthTracking(activity, sharedPreferences, babyId)
+            onAdd = { time, type, frequency ->
+                val newAlarm = Alarm(time, type, frequency, true)
+                alarms = alarms + newAlarm
+                saveAlarms(sharedPreferences, alarms)
             })
-        }
+    }
 
 }
 
 @Composable
-fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
+fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
-    var date by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
+    var alarmTime by remember { mutableStateOf("") }
+    var activityType by remember { mutableStateOf("") }
+    var frequency by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加打卡记录") },
+        title = { Text("添加闹钟") },
         text = {
             Column {
                 TextField(
-                    value = date,
-                    onValueChange = { date = it },
-                    label = { Text("输入日期，格式如0000-00-00") }
+                    value = alarmTime,
+                    onValueChange = { alarmTime = it },
+                    label = { Text("输入时间") }
                 )
                 TextField(
-                    value = height,
-                    onValueChange = { height = it },
-                    label = { Text("输入身高(cm)") }
+                    value = activityType,
+                    onValueChange = { activityType = it },
+                    label = { Text("输入事件") }
                 )
                 TextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("输入体重(kg)") }
+                    value = frequency,
+                    onValueChange = { frequency = it },
+                    label = { Text("选择频率") }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (date.length!= 10 ||  date[4] != '-' || date[7] != '-') {
-                        date = ""
-                    }
                     CoroutineScope(Dispatchers.Main).launch {
-                        if (date.isNotBlank() && height.isNotBlank() && weight.isNotBlank()) {
-                            addCheckin(babyId, date, height, weight)
-                            onAdd(date, height, weight) // 调用添加函数
-                            onDismiss() // 关闭对话框
+                        if (alarmTime.isNotBlank() && activityType.isNotBlank() && frequency.isNotBlank()  ) {
+//                            addAlarm(babyId, alarmTime, activityType, frequency)
+                            onAdd(alarmTime, activityType, frequency)
+                            onDismiss()
                         }
                     }
                 }
@@ -224,7 +228,7 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
 
 
 @Composable
-fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
+fun AlarmCard(alarm: Alarm, onDelete: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -238,20 +242,21 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = checkIn.date)
+            Text(text = alarm.activityType)
             IconButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "删除打卡记录")
+                Icon(Icons.Default.Delete, contentDescription = "删除")
             }
         }
-        Text(text = "身高： ${checkIn.height} cm")
-        Text(text = "体重： ${checkIn.weight} kg")
+        Text(text = "时间： ${alarm.alarmTime} ")
+        Text(text = "频率： ${alarm.frequency} ")
+        Text(text = "是否开启： ${alarm.active} ")
     }
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("确认删除") },
-            text = { Text("您确定要删除这个打卡记录吗？") },
+            text = { Text("您确定要删除这个闹钟吗？") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -271,59 +276,13 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
     }
 }
 
-fun fetchGrowthTracking(activity: Activity, sharedPreferences: SharedPreferences, babyId: Int) {
-    val apiString = "api/v1/babies/$babyId/growth"
-    CoroutineScope(Dispatchers.IO).launch {
-        val response = sendGetRequest(apiString)
-        try {
-            val gson = Gson()
-
-            val growthTrackingList: List<GrowthTracking> =
-                gson.fromJson(response, Array<GrowthTracking>::class.java).toList()
-
-            val newCheckIns =
-                growthTrackingList.map { tracking ->
-                    CheckIn(
-                        date = tracking.measurementDate.toString(),
-                        height = tracking.height.toString(),
-                        weight = tracking.weight.toString()
-                    )
-                }
-
-            saveCheckIns(sharedPreferences, newCheckIns.toList())
-
-        } catch (e: Exception) {
-            println("Json error: $response")
-        }
-    }
-
+fun loadAlarms(sharedPreferences: SharedPreferences): List<Alarm> {
+    val json = sharedPreferences.getString("alarms", "[]") ?: "[]"
+    return Gson().fromJson(json, Array<Alarm>::class.java).toList()
 }
 
-fun loadCheckIns(sharedPreferences: SharedPreferences): List<CheckIn> {
-    val json = sharedPreferences.getString("checkins", "[]") ?: "[]"
-    return Gson().fromJson(json, Array<CheckIn>::class.java).toList()
-}
-
-fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) {
+fun saveAlarms(sharedPreferences: SharedPreferences, alarms: List<Alarm>) {
     val editor = sharedPreferences.edit()
-    val json = Gson().toJson(checkIns)
-    editor.putString("checkins", json).apply()
-}
-
-data class CheckIn(val date: String, val height: String, val weight: String) {
-    fun toStringRepresentation(): String {
-        return "日期: $date   身高: $height   身高: $weight"
-    }
-}
-
-suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
-    val apiPath = "api/v1/babies/$babyId/growth"
-
-    val requestBody = JSONObject().apply {
-        put("weight", weight)
-        put("height", height)
-        put("measurementDate", date)
-    }
-
-    sendPostRequestWithRequest(apiPath, requestBody.toString())
+    val json = Gson().toJson(alarms)
+    editor.putString("alarms", json).apply()
 }

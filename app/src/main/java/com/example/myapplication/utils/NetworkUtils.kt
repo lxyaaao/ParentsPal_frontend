@@ -42,6 +42,7 @@ object NetworkUtils {
                 }
 
                 val responseCode = connection.responseCode
+                println("HTTPCode: $responseCode")
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
@@ -113,10 +114,29 @@ object NetworkUtils {
             try {
                 connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                "Error: ${connection.responseCode} - ${e.message}"
             } finally {
                 connection.disconnect()
             }
+        }
+    }
+}
+
+suspend fun sendDeleteRequest(apiString: String): String {
+    return withContext(Dispatchers.IO) {
+        val urlString = "http://parentspal.natapp1.cc/"
+        val url = URL(urlString + apiString)
+
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "DELETE"
+        println("HTTP: ${connection.responseCode}")
+
+        try {
+            connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+        } catch (e: Exception) {
+            "Error: ${connection.responseCode} - ${e.message}"
+        } finally {
+            connection.disconnect()
         }
     }
 }

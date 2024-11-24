@@ -123,7 +123,7 @@ private fun BabyScreen(activity: Activity) {
             ) {
                 ButtonWithTwoTexts(
                     leftText = "宝宝名字",
-                    rightText = sharedPreferences.getString("babyName", "宝宝名字") ?: "宝宝名字",
+                    rightText = sharedPreferences.getString("babyName", "") ?: "",
                     onClick = { nameClick = true }
                 )
 
@@ -151,7 +151,7 @@ private fun BabyScreen(activity: Activity) {
             val parentId = sharedPreferences.getInt("parentId", 0)
             val babyId = sharedPreferences.getInt("babyId", 0)
 
-            if (babyId == 0) {
+            if (babyId == 0 && name != "" && babyBirth != "") {
                 CoroutineScope(Dispatchers.Main).launch {
                     addBaby(parentId, name, babyGender, babyBirth, activity)
                 }

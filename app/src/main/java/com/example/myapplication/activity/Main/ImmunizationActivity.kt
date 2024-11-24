@@ -50,6 +50,7 @@ import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.sendDeleteRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,21 +60,28 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.time.LocalDate
 
-data class GrowthTracking(
-    val id: Long,
-    val height: Double,
-    val weight: Double,
-    val measurementDate: String,
-    val baby: Baby
+data class Immunization(
+    val id: Int,
+    val vaccineName: String,
+    val dateGiven: String,
+    val nextDue: String
 )
 
-class DailyLogActivity : ComponentActivity() {
+data class ImmunizationResponse(
+    val id: Int,
+    val babyId: Int,
+    val vaccineName: String,
+    val dateGiven: String,
+    val nextDue: String
+)
+
+class ImmunizationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                DailyLogScreen(this)
+                ImmunizationScreen(this)
             }
         }
     }
@@ -81,15 +89,14 @@ class DailyLogActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DailyLogScreen(activity: Activity) {
+private fun ImmunizationScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var addClick by remember { mutableStateOf(false) }
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
-    var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
-
+    var immunizations by remember { mutableStateOf(loadImmunizations(sharedPreferences)) }
 
     Scaffold(
         topBar = {
@@ -100,7 +107,7 @@ private fun DailyLogScreen(activity: Activity) {
                 ),
                 title = {
                     Text(
-                        "打卡记录",
+                        "疫苗提醒",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -134,11 +141,10 @@ private fun DailyLogScreen(activity: Activity) {
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    items(checkIns.reversed()) { checkIn ->
-                        CheckInCard(checkIn) {
-                            // 删除打卡记录
-                            checkIns = checkIns.filter { it != checkIn }
-                            saveCheckIns(sharedPreferences, checkIns) // 更新存储
+                    items(immunizations.reversed()) { immunization ->
+                        ImmunizationCard(immunization) {
+                            immunizations = immunizations.filter { it != immunization }
+                            saveImmunizations(sharedPreferences, immunizations) // 更新存储
                         }
                     }
                 }
@@ -153,46 +159,46 @@ private fun DailyLogScreen(activity: Activity) {
     }
 
     if (addClick) {
-        AddCheckInDialog(activity,
+        AddImmunizationDialog(activity,
             onDismiss = { addClick = false },
-            onAdd = { date, height, weight ->
-                val newCheckIn = CheckIn(date, height, weight)
-                checkIns = checkIns + newCheckIn // 添加新记录
-                saveCheckIns(sharedPreferences, checkIns) // 更新存储
-                fetchGrowthTracking(activity, sharedPreferences, babyId)
+            onAdd = { vaccine, date, due ->
+                val newImmunization = Immunization(0, vaccine, date, due)
+                immunizations = immunizations + newImmunization
+                saveImmunizations(sharedPreferences, immunizations)
+                fetchImmunizations(sharedPreferences, babyId)
             })
-        }
+    }
 
 }
 
 @Composable
-fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
+fun AddImmunizationDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
+    var vaccine by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
+    var due by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加打卡记录") },
+        title = { Text("添加疫苗") },
         text = {
             Column {
                 TextField(
+                    value = vaccine,
+                    onValueChange = { vaccine = it },
+                    label = { Text("输入疫苗名字") }
+                )
+                TextField(
                     value = date,
                     onValueChange = { date = it },
-                    label = { Text("输入日期，格式如0000-00-00") }
+                    label = { Text("输入疫苗时间，格式如0000-00-00") }
                 )
                 TextField(
-                    value = height,
-                    onValueChange = { height = it },
-                    label = { Text("输入身高(cm)") }
-                )
-                TextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("输入体重(kg)") }
+                    value = due,
+                    onValueChange = { due = it },
+                    label = { Text("输入有效时间，格式如0000-00-00") }
                 )
             }
         },
@@ -202,11 +208,23 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
                     if (date.length!= 10 ||  date[4] != '-' || date[7] != '-') {
                         date = ""
                     }
+                    if (due.length!= 10 ||  due[4] != '-' || due[7] != '-') {
+                        due = ""
+                    }
                     CoroutineScope(Dispatchers.Main).launch {
-                        if (date.isNotBlank() && height.isNotBlank() && weight.isNotBlank()) {
-                            addCheckin(babyId, date, height, weight)
-                            onAdd(date, height, weight) // 调用添加函数
-                            onDismiss() // 关闭对话框
+                        if (vaccine.isNotBlank() && date.isNotBlank() && due.isNotBlank()  ) {
+                            val apiPath = "api/immunizations/$babyId/add"
+
+                            val requestBody = JSONObject().apply {
+                                put("vaccineName", vaccine)
+                                put("dateGiven", date)
+                                put("nextDue", due)
+                            }
+
+                            sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+                            onAdd(vaccine, date, due)
+                            onDismiss()
                         }
                     }
                 }
@@ -224,7 +242,7 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
 
 
 @Composable
-fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
+fun ImmunizationCard(immunization: Immunization, onDelete: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -238,24 +256,31 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = checkIn.date)
+            Text(text = immunization.vaccineName)
             IconButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "删除打卡记录")
+                Icon(Icons.Default.Delete, contentDescription = "删除")
             }
         }
-        Text(text = "身高： ${checkIn.height} cm")
-        Text(text = "体重： ${checkIn.weight} kg")
+        Text(text = "注射时间： ${immunization.dateGiven} ")
+        Text(text = "起效时间： ${immunization.nextDue} 前")
     }
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("确认删除") },
-            text = { Text("您确定要删除这个打卡记录吗？") },
+            text = { Text("您确定要删除这个疫苗提醒吗？") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         onDelete()
+
+                        println(immunization.id)
+                        val apiString = "api/immunizations/${immunization.id}"
+                        CoroutineScope(Dispatchers.IO).launch {
+                            sendDeleteRequest(apiString)
+                        }
+
                         showDialog = false
                     }
                 ) {
@@ -271,59 +296,43 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
     }
 }
 
-fun fetchGrowthTracking(activity: Activity, sharedPreferences: SharedPreferences, babyId: Int) {
-    val apiString = "api/v1/babies/$babyId/growth"
+fun loadImmunizations(sharedPreferences: SharedPreferences): List<Immunization> {
+    val json = sharedPreferences.getString("immunizations", "[]") ?: "[]"
+    return Gson().fromJson(json, Array<Immunization>::class.java).toList()
+}
+
+fun saveImmunizations(sharedPreferences: SharedPreferences, immunizations: List<Immunization>) {
+    val editor = sharedPreferences.edit()
+    val json = Gson().toJson(immunizations)
+    editor.putString("immunizations", json).apply()
+}
+
+fun fetchImmunizations(sharedPreferences: SharedPreferences, babyId: Int) {
+    val apiString = "api/immunizations/$babyId"
     CoroutineScope(Dispatchers.IO).launch {
         val response = sendGetRequest(apiString)
         try {
+            println(response)
             val gson = Gson()
 
-            val growthTrackingList: List<GrowthTracking> =
-                gson.fromJson(response, Array<GrowthTracking>::class.java).toList()
+            val immunizationList: List<ImmunizationResponse> =
+                gson.fromJson(response, Array<ImmunizationResponse>::class.java).toList()
 
-            val newCheckIns =
-                growthTrackingList.map { tracking ->
-                    CheckIn(
-                        date = tracking.measurementDate.toString(),
-                        height = tracking.height.toString(),
-                        weight = tracking.weight.toString()
+            val newImmunizations =
+                immunizationList.map { tracking ->
+                    Immunization(
+                        id = tracking.id,
+                        vaccineName = tracking.vaccineName,
+                        dateGiven = tracking.dateGiven,
+                        nextDue = tracking.nextDue
                     )
                 }
 
-            saveCheckIns(sharedPreferences, newCheckIns.toList())
+            saveImmunizations(sharedPreferences, newImmunizations.toList())
 
         } catch (e: Exception) {
-            println("Json error: $response")
+            println("Json error: $babyId, $response")
         }
     }
 
-}
-
-fun loadCheckIns(sharedPreferences: SharedPreferences): List<CheckIn> {
-    val json = sharedPreferences.getString("checkins", "[]") ?: "[]"
-    return Gson().fromJson(json, Array<CheckIn>::class.java).toList()
-}
-
-fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) {
-    val editor = sharedPreferences.edit()
-    val json = Gson().toJson(checkIns)
-    editor.putString("checkins", json).apply()
-}
-
-data class CheckIn(val date: String, val height: String, val weight: String) {
-    fun toStringRepresentation(): String {
-        return "日期: $date   身高: $height   身高: $weight"
-    }
-}
-
-suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
-    val apiPath = "api/v1/babies/$babyId/growth"
-
-    val requestBody = JSONObject().apply {
-        put("weight", weight)
-        put("height", height)
-        put("measurementDate", date)
-    }
-
-    sendPostRequestWithRequest(apiPath, requestBody.toString())
 }

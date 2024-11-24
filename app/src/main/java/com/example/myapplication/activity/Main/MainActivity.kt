@@ -181,7 +181,7 @@ fun HomeMainScreen(activity: Activity) {
         Spacer(modifier = Modifier.height(64.dp))
         CustomButton(
             title = "打卡记录",
-            description = getCheckin(activity).toString(),
+            description = getCheckin(activity),
             onClick = {
                 val intent = Intent(activity, DailyLogActivity::class.java)
                 activity.startActivity(intent)
@@ -191,9 +191,9 @@ fun HomeMainScreen(activity: Activity) {
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
             title = "闹钟",
-            description = sharedPreferences.getString("memo", " ") ?: " ",
+            description = "",
             onClick = {
-                val intent = Intent(activity, MemoActivity::class.java)
+                val intent = Intent(activity, AlarmActivity::class.java)
                 activity.startActivity(intent)
                 activity.finish()
             }
@@ -201,8 +201,11 @@ fun HomeMainScreen(activity: Activity) {
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
             title = "疫苗",
-            description = "xxx",
+            description = getImmunization(activity),
             onClick = {
+                val intent = Intent(activity, ImmunizationActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
             }
         )
     }
@@ -307,6 +310,23 @@ fun getCheckin(activity: Activity): String {
     for (i in checkIns.indices.reversed()) {
         val checkIn = checkIns[i]
         StringBuilder.append("${checkIn.date}  身高:${checkIn.height}cm 体重:${checkIn.weight}kg\n")
+    }
+    val String = StringBuilder.toString()
+
+    return String
+}
+
+@Composable
+fun getImmunization(activity: Activity): String {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    var immunizations by remember { mutableStateOf(loadImmunizations(sharedPreferences)) }
+
+    val StringBuilder = StringBuilder()
+    for (i in immunizations.indices.reversed()) {
+        val immunization = immunizations[i]
+        StringBuilder.append("${immunization.vaccineName}\n")
     }
     val String = StringBuilder.toString()
 
