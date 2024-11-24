@@ -114,7 +114,7 @@ private fun BlogScreen(activity: Activity) {
                         Tab(
                             selected = selectedTabIndex == index,
                             onClick = {
-                                selectedTabIndex = index // 处理点击事件，例如切换内容
+                                selectedTabIndex = index
                             },
                             text = { Text(title) }
                         )

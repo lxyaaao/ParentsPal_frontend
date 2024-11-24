@@ -60,9 +60,11 @@ import org.json.JSONObject
 import java.time.LocalDate
 
 data class Alarm(
+    val id: Int,
     val activityType: String,
     val alarmTime: String,
-    val frequency: String,
+    val customIntervalInHours: Int,
+    val isRecurring: Boolean,
     val active: Boolean
 )
 
@@ -71,7 +73,7 @@ data class AlarmResponse(
     val babyId: Int,
     val activityType: String,
     val alarmTime: String,
-    val frequency: String,
+    val customIntervalInHours: Int,
     val recurring: Boolean,
     val active: Boolean
 )
@@ -163,8 +165,8 @@ private fun AlarmScreen(activity: Activity) {
     if (addClick) {
         AddAlarmDialog(activity,
             onDismiss = { addClick = false },
-            onAdd = { time, type, frequency ->
-                val newAlarm = Alarm(time, type, frequency, true)
+            onAdd = { time, type, hours, recurring ->
+                val newAlarm = Alarm(0, type, time, hours, recurring, true)
                 alarms = alarms + newAlarm
                 saveAlarms(sharedPreferences, alarms)
             })
@@ -173,13 +175,15 @@ private fun AlarmScreen(activity: Activity) {
 }
 
 @Composable
-fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, String) -> Unit) {
+fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, String, Int, Boolean) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
+    var alarmDate by remember { mutableStateOf("") }
     var alarmTime by remember { mutableStateOf("") }
     var activityType by remember { mutableStateOf("") }
-    var frequency by remember { mutableStateOf("") }
+    var hour by remember { mutableStateOf("") }
+    var isRecurring by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -187,9 +191,14 @@ fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, St
         text = {
             Column {
                 TextField(
+                    value = alarmDate,
+                    onValueChange = { alarmDate = it },
+                    label = { Text("输入日期，格式如0000-00-00") }
+                )
+                TextField(
                     value = alarmTime,
                     onValueChange = { alarmTime = it },
-                    label = { Text("输入时间") }
+                    label = { Text("输入时间，格式如00:00:00") }
                 )
                 TextField(
                     value = activityType,
@@ -197,19 +206,31 @@ fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, St
                     label = { Text("输入事件") }
                 )
                 TextField(
-                    value = frequency,
-                    onValueChange = { frequency = it },
-                    label = { Text("选择频率") }
+                    value = hour,
+                    onValueChange = { hour = it },
+                    label = { Text("输入循环时间") }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
+                    if (alarmDate.length!= 10 ||  alarmDate[4] != '-' || alarmDate[7] != '-') {
+                        alarmDate = ""
+                    }
+                    if (alarmTime.length!= 8 ||  alarmTime[2] != ':' || alarmTime[5] != ':') {
+                        alarmTime = ""
+                    }
+
                     CoroutineScope(Dispatchers.Main).launch {
-                        if (alarmTime.isNotBlank() && activityType.isNotBlank() && frequency.isNotBlank()  ) {
-//                            addAlarm(babyId, alarmTime, activityType, frequency)
-                            onAdd(alarmTime, activityType, frequency)
+                        if (hour == "0") {
+                            isRecurring = false
+                        } else {
+                            isRecurring = true
+                        }
+                        if ( alarmTime.isNotBlank() && alarmDate.isNotBlank() && activityType.isNotBlank() && hour.isNotBlank() ) {
+                            addAlarm(babyId, alarmDate + "T" + alarmTime, activityType, hour)
+                            onAdd(alarmDate+ "T" + alarmTime, activityType, hour.toInt(), isRecurring)
                             onDismiss()
                         }
                     }
@@ -247,8 +268,15 @@ fun AlarmCard(alarm: Alarm, onDelete: () -> Unit) {
                 Icon(Icons.Default.Delete, contentDescription = "删除")
             }
         }
-        Text(text = "时间： ${alarm.alarmTime} ")
-        Text(text = "频率： ${alarm.frequency} ")
+
+        val time = alarm.alarmTime.substring(0, 10) + " " + alarm.alarmTime.substring(11)
+        Text(text = "时间： $time ")
+        if (alarm.isRecurring) {
+            Text(text = "频率： ${alarm.customIntervalInHours} h ")
+        } else {
+            Text(text = "频率： 不重复 ")
+        }
+
         Text(text = "是否开启： ${alarm.active} ")
     }
 
@@ -285,4 +313,56 @@ fun saveAlarms(sharedPreferences: SharedPreferences, alarms: List<Alarm>) {
     val editor = sharedPreferences.edit()
     val json = Gson().toJson(alarms)
     editor.putString("alarms", json).apply()
+}
+
+suspend fun addAlarm(babyId: Int, alarmTime: String, activityType: String, hour: String) {
+    var isRecurring: Boolean
+    if (hour == "0") {
+        isRecurring = false
+    } else {
+        isRecurring = true
+    }
+
+    val apiPath = "api/v1/alarms/set/$babyId"
+
+    val requestBody = JSONObject().apply {
+        put("activityType", activityType)
+        put("alarmTime", alarmTime)
+        put("customIntervalInHours", hour)
+        put("isRecurring", isRecurring)
+    }
+
+    sendPostRequestWithRequest(apiPath, requestBody.toString())
+}
+
+fun fetchAlarms(sharedPreferences: SharedPreferences, babyId: Int) {
+    val apiString = "api/v1/alarms/get/$babyId"
+    CoroutineScope(Dispatchers.IO).launch {
+        val response = sendGetRequest(apiString)
+        try {
+            println(response)
+            val gson = Gson()
+
+            val alarmList: List<AlarmResponse> =
+                gson.fromJson(response, Array<AlarmResponse>::class.java).toList()
+
+            val newAlarms =
+                alarmList.map { tracking ->
+                    Alarm(
+                        id = tracking.id,
+                        activityType = tracking.activityType,
+                        alarmTime = tracking.alarmTime,
+                        customIntervalInHours = tracking.customIntervalInHours,
+                        isRecurring = tracking.recurring,
+                        active = tracking.active
+                    )
+                }
+
+            saveAlarms(sharedPreferences, newAlarms.toList())
+
+        } catch (e: Exception) {
+            println("Json error: $babyId, $response")
+        }
+    }
+
 }

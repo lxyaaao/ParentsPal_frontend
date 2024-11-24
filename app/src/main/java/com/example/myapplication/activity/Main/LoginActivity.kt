@@ -229,6 +229,7 @@ fun saveUser(activity: Activity, parentId: Int, parentName: String, babies: List
 
         fetchGrowthTracking(activity, sharedPreferences, babyId)
         fetchImmunizations(sharedPreferences, babyId)
+        fetchAlarms(sharedPreferences, babyId)
 
     } else {
         editor.putInt("babyId", 0)
@@ -239,6 +240,7 @@ fun saveUser(activity: Activity, parentId: Int, parentName: String, babies: List
 
         fetchGrowthTracking(activity, sharedPreferences, 0)
         fetchImmunizations(sharedPreferences, 0)
+        fetchAlarms(sharedPreferences, 0)
 
     }
     editor.apply()

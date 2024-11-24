@@ -262,7 +262,7 @@ fun ImmunizationCard(immunization: Immunization, onDelete: () -> Unit) {
             }
         }
         Text(text = "注射时间： ${immunization.dateGiven} ")
-        Text(text = "起效时间： ${immunization.nextDue} 前")
+        Text(text = "下一次注射时间： ${immunization.nextDue} ")
     }
 
     if (showDialog) {
@@ -312,7 +312,6 @@ fun fetchImmunizations(sharedPreferences: SharedPreferences, babyId: Int) {
     CoroutineScope(Dispatchers.IO).launch {
         val response = sendGetRequest(apiString)
         try {
-            println(response)
             val gson = Gson()
 
             val immunizationList: List<ImmunizationResponse> =

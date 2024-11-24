@@ -191,7 +191,7 @@ fun HomeMainScreen(activity: Activity) {
         Spacer(modifier = Modifier.height(32.dp))
         CustomButton(
             title = "闹钟",
-            description = "",
+            description = getAlarm(activity),
             onClick = {
                 val intent = Intent(activity, AlarmActivity::class.java)
                 activity.startActivity(intent)
@@ -327,6 +327,25 @@ fun getImmunization(activity: Activity): String {
     for (i in immunizations.indices.reversed()) {
         val immunization = immunizations[i]
         StringBuilder.append("${immunization.vaccineName}\n")
+    }
+    val String = StringBuilder.toString()
+
+    return String
+}
+
+@Composable
+fun getAlarm(activity: Activity): String {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    var alarms by remember { mutableStateOf(loadAlarms(sharedPreferences)) }
+
+    val StringBuilder = StringBuilder()
+    for (i in alarms.indices.reversed()) {
+        val alarm = alarms[i]
+        if (alarm.active) {
+            StringBuilder.append("${alarm.alarmTime.substring(0, 10)} ${alarm.alarmTime.substring(11)}: ${alarm.activityType} \n")
+        }
     }
     val String = StringBuilder.toString()
 
