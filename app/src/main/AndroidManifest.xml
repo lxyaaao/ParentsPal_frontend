@@ -49,9 +49,6 @@
             android:name=".activity.Main.DailyLogActivity"
             android:exported="false" />
         <activity
-            android:name=".activity.Main.MemoActivity"
-            android:exported="false" />
-        <activity
             android:name=".activity.Blog.SearchResultActivity"
             android:exported="false" />
         <activity

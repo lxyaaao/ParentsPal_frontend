@@ -173,7 +173,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     Text(
                         text = it.title,
                         style = TextStyle(fontSize = 24.sp),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                     )
                 }
 
