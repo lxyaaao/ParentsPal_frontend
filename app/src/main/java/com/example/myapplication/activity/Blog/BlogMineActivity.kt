@@ -9,7 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -30,15 +33,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.activity.Main.BottomNavigationBar
 import com.example.myapplication.activity.Main.HomeScreen
+import com.example.myapplication.activity.Main.Immunization
+import com.example.myapplication.activity.Main.ImmunizationResponse
 import com.example.myapplication.activity.Main.NavItem
 import com.example.myapplication.activity.Main.PersonScreen
 import com.example.myapplication.activity.Main.QuestionAnswerScreen
+import com.example.myapplication.activity.Main.saveImmunizations
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class BlogMineActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -172,9 +184,37 @@ fun MyShareContent(activity: Activity) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var MyShare by remember { mutableStateOf(loadShare(sharedPreferences)) }
+    val parentId = sharedPreferences.getInt("parentId", 0)
+    var articles: List<Article> by remember { mutableStateOf(emptyList()) }
 
-    AskContent(MyShare)
+    val apiString = "user-article/$parentId"
+    CoroutineScope(Dispatchers.IO).launch {
+        val response = sendGetRequest(apiString)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
+            articles = apiResponse.data
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        items(articles.reversed()) { blogContent ->
+            BlogContentCard(blogContent, onClick = {
+                val editor = sharedPreferences.edit()
+                editor.putInt("articleId", blogContent.articleId).apply()
+
+                val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            })
+        }
+    }
 }
 
 @Composable

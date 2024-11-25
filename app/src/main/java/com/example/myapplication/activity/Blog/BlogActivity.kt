@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -149,23 +151,16 @@ private fun BlogScreen(activity: Activity) {
 
 @Composable
 fun TabContent1() {
-    val shareContents = listOf(
-        BlogContent(R.drawable.baseline_account_circle_24, "User1", "This is the first blog post!", listOf("Nice post!", "Thanks for sharing!"), "2024-10-22"),
-        BlogContent(R.drawable.baseline_account_circle_24, "User2", "This is another blog post!", listOf("Interesting!", "I learned something new!"), "2024-10-23"),
-        BlogContent(R.drawable.baseline_account_circle_24, "User3", "This is the third blog post and it is longer!", listOf(), "2024-10-23"),
-    )
 
-    ShareContent(shareContents)
+
+//    ShareContent(shareContents)
 }
 
 @Composable
 fun TabContent2() {
-    val askContents = listOf(
-        BlogContent(R.drawable.baseline_account_circle_24, "User1", "This is the first question!", listOf("Ans1"), "2024-10-22"),
-        BlogContent(R.drawable.baseline_account_circle_24, "User2", "This is another question!", listOf("Ans1", "Ans2"), "2024-10-23"),
-    )
 
-    AskContent(askContents)
+
+//    AskContent(askContents)
 }
 
 private fun BlogMainScreen(activity: Activity) {
@@ -265,7 +260,7 @@ fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
 }
 
 @Composable
-fun ShareContent(shareContents: List<BlogContent>) {
+fun ShareContent(shareContents: List<Article>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -278,7 +273,7 @@ fun ShareContent(shareContents: List<BlogContent>) {
 }
 
 @Composable
-fun AskContent(askContents: List<BlogContent>) {
+fun AskContent(askContents: List<Article>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -291,7 +286,7 @@ fun AskContent(askContents: List<BlogContent>) {
 }
 
 @Composable
-fun BlogContentCard(blogContent: BlogContent, onClick: () -> Unit) {
+fun BlogContentCard(article: Article, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -300,11 +295,11 @@ fun BlogContentCard(blogContent: BlogContent, onClick: () -> Unit) {
             .border(1.dp, Color.LightGray, shape = RoundedCornerShape(8.dp))
             .clickable { onClick() }
     ) {
-        Column (modifier = Modifier.padding(16.dp)) {
+        Column (modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp)) {
             // 头像和昵称
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = blogContent.avatarUrl),
+                    painter = painterResource(id = R.drawable.baseline_account_circle_24),
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(64.dp)
@@ -313,31 +308,54 @@ fun BlogContentCard(blogContent: BlogContent, onClick: () -> Unit) {
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = blogContent.username)
+                Text(text = article.username)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 博客内容
-            Text(text = blogContent.content)
+            Text(text = article.title)
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 评论
-            for (comment in blogContent.comments) {
-                Text(text = comment, color = Color.Gray)
+            Text(text = article.content, color = Color.Gray)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = article.time.substring(0, 10),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Start
+                )
+
+                Text(
+                    fontSize = 12.sp,
+                    text = "Likes: ${article.likes}",
+                    textAlign = TextAlign.End
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Posted on: ${blogContent.timestamp}", fontSize = 12.sp)
         }
     }
 }
 
-data class BlogContent(
-    val avatarUrl: Int,
+data class GetArticleResponse(
+    val data: List<Article>,
+    val success: Boolean,
+    val errorMsg: String?
+)
+
+data class Article(
+    val articleId: Int,
+    val idUser: Int,
     val username: String,
+    val title: String,
     val content: String,
-    val comments: List<String>,
-    val timestamp: String
+    val likes: Int,
+    val saves: Int,
+    val time: String
 )

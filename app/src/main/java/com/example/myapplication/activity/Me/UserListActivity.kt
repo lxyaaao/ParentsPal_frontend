@@ -201,8 +201,6 @@ fun FollowingUserList(): List<User> {
     val users = listOf(
         User(avatarResId = R.drawable.baseline_account_circle_24, username = "Alice"),
         User(avatarResId = R.drawable.baseline_account_circle_24, username = "Bob"),
-        User(avatarResId = R.drawable.baseline_account_circle_24, username = "用户3"),
-        User(avatarResId = R.drawable.baseline_account_circle_24, username = "用户4"),
     )
     return users
 }

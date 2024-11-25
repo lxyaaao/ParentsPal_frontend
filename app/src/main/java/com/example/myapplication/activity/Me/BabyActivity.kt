@@ -89,6 +89,7 @@ private fun BabyScreen(activity: Activity) {
     var name by remember { mutableStateOf(sharedPreferences.getString("babyName", "") ?: "") }
     var babyGender by remember { mutableStateOf(sharedPreferences.getString("babyGender", "") ?: "") }
     var babyBirth by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
+    var babyId by remember { mutableStateOf(sharedPreferences.getInt("babyId", 0)) }
 
     Scaffold(
         topBar = {
@@ -149,12 +150,11 @@ private fun BabyScreen(activity: Activity) {
     LaunchedEffect(backFlag) {
         if (backFlag) {
             val parentId = sharedPreferences.getInt("parentId", 0)
-            val babyId = sharedPreferences.getInt("babyId", 0)
-
+            babyId = sharedPreferences.getInt("babyId", 0)
             name = sharedPreferences.getString("babyName", "") ?: ""
             babyBirth = sharedPreferences.getString("babyBirthdate", "") ?: ""
+            babyGender = sharedPreferences.getString("babyGender", "") ?: ""
 
-            println("id: ${babyId}, name: ${name}, birth: ${babyBirth}}")
             if (babyId == 0 && name != "" && babyBirth != "") {
                 CoroutineScope(Dispatchers.Main).launch {
                     addBaby(parentId, name, babyGender, babyBirth, activity)
@@ -303,6 +303,6 @@ suspend fun addBaby(parentId: Int, name: String, babyGender: String, babyBirth: 
     val sharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
-    editor.putInt("babyId", response.id.toInt())
+    editor.putInt("babyId", response.id.toInt()).apply()
 
 }

@@ -199,8 +199,8 @@ fun AddAskContent(activity: Activity, checkClick: Boolean) {
     }
 }
 
-fun loadShare(sharedPreferences: SharedPreferences): List<BlogContent> {
+fun loadShare(sharedPreferences: SharedPreferences): List<Article> {
     val json = sharedPreferences.getString("myShare", "[]") ?: "[]"
-    val blogContentType = object : TypeToken<List<BlogContent>>() {}.type
+    val blogContentType = object : TypeToken<List<Article>>() {}.type
     return Gson().fromJson(json, blogContentType)
 }
