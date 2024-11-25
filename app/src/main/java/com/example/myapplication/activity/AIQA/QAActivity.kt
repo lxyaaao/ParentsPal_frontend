@@ -327,6 +327,20 @@ private fun ConversationScreen(activity: Activity) {
                                 currentText.value,
                                 SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
                             )
+                            conversations.value = conversations.value + ConversationItem(
+                                conversationName,
+                                "正在思考中。。。",
+                                SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                            )
+                            CoroutineScope(Dispatchers.Main).launch {
+                                while (true) {
+                                    val lastItem = conversations.value.last()
+                                    if (lastItem.lastMessage.startsWith("正")) {
+                                        conversations.value = conversations.value.dropLast(1) + lastItem.copy(lastMessage = lastItem.lastMessage + "。")
+                                    }
+                                    delay(1000)
+                                }
+                            }
                         }
 
 
@@ -351,7 +365,7 @@ private fun ConversationScreen(activity: Activity) {
                                 conversationId.value = jsonResponse.optString("conversation_id", "")
                                 val responseText = jsonResponse.optString("answer", "")
                                 // Handle the response here
-                                conversations.value = conversations.value + ConversationItem(
+                                conversations.value = conversations.value.dropLast(1) + ConversationItem(
                                     conversationName,
                                     responseText,
                                     SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
