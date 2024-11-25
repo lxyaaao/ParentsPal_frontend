@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -59,6 +60,7 @@ import com.example.myapplication.utils.NetworkUtils.sendAIRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -247,6 +249,7 @@ suspend fun loadConversationHistory(username1: String, username2: String): List<
         val apiString =
             "api/conversations/messages-between-users?username1=$username1&username2=$username2"
         val response = NetworkUtils.sendGetRequest(apiString)
+        Log.d("response", response)
         try {
             parseConversationHistory(response)
         } catch (e: JSONException) {
@@ -270,8 +273,11 @@ private fun ConversationScreen(activity: Activity) {
 
     LaunchedEffect(Unit) {
         if (isUserConversation()) {
-            val history = loadConversationHistory(myName, ConversationInfo.userName!!)
-            conversations.value = history
+            while (true){
+                val history = loadConversationHistory(myName, ConversationInfo.userName!!)
+                conversations.value = history
+                delay(1000)
+            }
         }
     }
 
@@ -308,11 +314,20 @@ private fun ConversationScreen(activity: Activity) {
                     IconButton(onClick = {
                         currentText.value = textState.value
                         textState.value = ""
-                        conversations.value = conversations.value + ConversationItem(
-                            myName,
-                            currentText.value,
-                            SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-                        )
+                        if(isUserConversation()){
+                            conversations.value = conversations.value + ConversationItem(
+                                myName,
+                                currentText.value,
+                                "发送中"
+                            )
+                        }
+                        else{
+                            conversations.value = conversations.value + ConversationItem(
+                                myName,
+                                currentText.value,
+                                SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                            )
+                        }
 
 
                         CoroutineScope(Dispatchers.Main).launch {
@@ -322,12 +337,11 @@ private fun ConversationScreen(activity: Activity) {
                                     "api/conversations/message?senderUsername=${myName}&receiverUsername=${conversationName}&content=${currentText.value}"
                                 val response =
                                     sendPostRequest(apiString)
-                                print(response)
-                                print("done")
 
                             } else {
                                 val response =
                                     sendAIRequest(currentText.value, conversationId.value)
+                                Log.d("response", response)
                                 val jsonResponse = try {
                                     JSONObject(response)
                                 } catch (e: Exception) {
