@@ -351,7 +351,7 @@ data class GetArticleResponse(
 
 data class Article(
     val articleId: Int,
-    val idUser: Int,
+    val userId: Int,
     val username: String,
     val title: String,
     val content: String,

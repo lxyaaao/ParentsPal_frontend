@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
@@ -74,6 +75,7 @@ import com.example.myapplication.utils.sendDeleteRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONException
@@ -122,6 +124,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
         val apiString = "article/$articleId"
         val response = sendGetRequest(apiString)
         try {
+            println(response)
             val gson = Gson()
             val apiResponse = gson.fromJson(response, CheckArticleResponse::class.java)
             article = apiResponse.data
@@ -216,31 +219,79 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Text(
-                    text = "评论区(0)",
-                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                )
+                CommentSection(articleId, activity)
+
+                var isLiked by remember { mutableStateOf(false) }
+                var isSaved by remember { mutableStateOf(false) }
+                var commentText by remember { mutableStateOf("") }
 
                 Box(modifier = Modifier.fillMaxSize()) {
                     Row(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
+                            .align(Alignment.BottomStart),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { /* 点赞操作 */ }) {
+                        IconButton(
+                            onClick = {
+                                isLiked = !isLiked
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Favorite,
                                 contentDescription = "Like",
-                                tint = Color.Gray
+                                tint = if (isLiked) Color.Red else Color.Gray
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        IconButton(onClick = { /* 收藏操作 */ }) {
+                        IconButton(
+                            onClick = {
+                                isSaved = !isSaved
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Bookmark,
                                 contentDescription = "Bookmark",
+                                tint = if (isSaved) Color(0xFFFFC107) else Color.Gray
+                            )
+                        }
+
+                        TextField(
+                            value = commentText,
+                            onValueChange = { commentText = it },
+                            label = { Text("Add a comment...") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .padding(start = 4.dp, end = 4.dp),
+                            singleLine = true
+                        )
+
+                        IconButton(
+                            onClick = {
+                                if (commentText.isNotBlank()) {
+                                    val apiPath = "comment"
+
+                                    val requestBody = JSONObject().apply {
+                                        put("articleId", articleId)
+                                        article?.let { put("userId", it.userId) }
+                                        put("content", commentText)
+                                    }
+                                    println(requestBody)
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+                                        println(responseString)
+                                    }
+
+                                    commentText = ""
+                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Send,
+                                contentDescription = "Submit Comment",
                                 tint = Color.Gray
                             )
                         }
@@ -255,13 +306,84 @@ private fun MyBlogCheckScreen(activity: Activity) {
         activity.startActivity(intent)
         activity.finish()
     }
+}
 
+@Composable
+fun CommentSection(articleId: Int, activity: Activity) {
+    val apiString = "comment-article/$articleId"
+    var comments: List<Comment> by remember { mutableStateOf(emptyList()) }
 
+    LaunchedEffect(articleId) {
+        while (true) {
+            delay(100)
+            val response = sendGetRequest(apiString)
+            try {
+                val gson = Gson()
+                val apiResponse = gson.fromJson(response, CommentResponse::class.java)
+                comments = apiResponse.data
+            } catch (e: Exception) {
+                println("Json error: $response")
+            }
+        }
+    }
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "评论区 (${comments.size})",
+            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(comments) { comment ->
+                CommentItem(comment = comment)
+            }
+        }
+
+    }
+}
+
+@Composable
+fun CommentItem(comment: Comment) {
+    Column(modifier = Modifier.padding(8.dp)) {
+        Text(
+            text = comment.username,
+            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        )
+
+        Text(
+            text = "${comment.time.substring(0, 10)} ${comment.time.substring(11)}",
+            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+        )
+
+        Text(
+            text = comment.content,
+            style = TextStyle(fontSize = 14.sp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 }
 
 data class CheckArticleResponse(
       val data: Article,
       val success: Boolean,
       val errorMsg: String?
+)
+
+data class CommentResponse(
+    val data: List<Comment>,
+    val success: Boolean,
+    val errorMsg: String? = null
+)
+
+data class Comment(
+    val commentId: Int,
+    val articleId: Int,
+    val userId: Int,
+    val username: String,
+    val content: String,
+    val likes: Int,
+    val time: String,
 )
