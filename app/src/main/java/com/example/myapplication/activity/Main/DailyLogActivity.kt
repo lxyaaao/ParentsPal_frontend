@@ -9,7 +9,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,22 +45,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
+import com.example.myapplication.activity.Me.ButtonWithTwoTexts
+import com.example.myapplication.activity.Me.NameInputDialog
 import com.example.myapplication.api.Baby
 import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONException
 import org.json.JSONObject
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class GrowthTracking(
     val id: Long,
@@ -67,7 +75,7 @@ data class GrowthTracking(
     val baby: Baby
 )
 
-class DailyLogActivity : ComponentActivity() {
+class DailyLogActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -174,26 +182,41 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
     var height by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
 
+    var heightClick by remember { mutableStateOf(false) }
+    var weightClick by remember { mutableStateOf(false) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("添加打卡记录") },
         text = {
             Column {
-                TextField(
-                    value = date,
-                    onValueChange = { date = it },
-                    label = { Text("输入日期，格式如0000-00-00") }
+                ButtonWithTwoTexts(
+                    leftText = "输入日期",
+                    rightText = date,
+                    onClick = { showDatePickerDialog = true },
+                    color = false
                 )
-                TextField(
-                    value = height,
-                    onValueChange = { height = it },
-                    label = { Text("输入身高(cm)") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入身高(cm)",
+                    rightText = height,
+                    onClick = { heightClick = true },
+                    color = false
                 )
-                TextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("输入体重(kg)") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入体重(kg)",
+                    rightText = weight,
+                    onClick = { weightClick = true },
+                    color = false
                 )
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
             }
         },
         confirmButton = {
@@ -220,6 +243,86 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
             }
         }
     )
+
+    @Composable
+    fun showDatePicker() {
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("选择日期")
+            .build()
+
+        val context = LocalContext.current
+        val fragmentActivity = context as? FragmentActivity
+
+        fragmentActivity?.let { activity ->
+            val fragmentManager = activity.supportFragmentManager
+            val fragmentTag = "DATE_PICKER"
+
+            // Avoid showing multiple DatePickers at the same time
+            val existingFragment = fragmentManager.findFragmentByTag(fragmentTag)
+            if (existingFragment == null) {
+                datePicker.show(fragmentManager, fragmentTag)
+            }
+        }
+
+        // Set a listener to update date when a date is picked
+        datePicker.addOnPositiveButtonClickListener { selection ->
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            date = sdf.format(Date(selection)) // Update date state
+        }
+    }
+
+    if (showDatePickerDialog) {
+        showDatePicker()
+        showDatePickerDialog = false // Reset the trigger state after showing the date picker
+    }
+
+    if (heightClick) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text(text = "输入身高") },
+            text = {
+                TextField(
+                    value = height,
+                    onValueChange = { height = it },
+                    placeholder = { Text(text = "输入身高", color = Color.Gray) }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { heightClick = false }) {
+                    Text(text = "确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { heightClick = false }) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
+
+    if (weightClick) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text(text = "输入体重") },
+            text = {
+                TextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    placeholder = { Text(text = "输入体重", color = Color.Gray) }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { weightClick = false }) {
+                    Text(text = "确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { weightClick = false }) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
 }
 
 
@@ -310,11 +413,7 @@ fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) 
     editor.putString("checkins", json).apply()
 }
 
-data class CheckIn(val date: String, val height: String, val weight: String) {
-    fun toStringRepresentation(): String {
-        return "日期: $date   身高: $height   身高: $weight"
-    }
-}
+data class CheckIn(val date: String, val height: String, val weight: String)
 
 suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
     val apiPath = "api/v1/babies/$babyId/growth"

@@ -26,6 +26,7 @@
             android:exported="false" />
         <activity
             android:name=".activity.Me.BabyActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".activity.Me.UserListActivity"
@@ -47,6 +48,7 @@
             android:exported="false" />
         <activity
             android:name=".activity.Main.DailyLogActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".activity.Blog.SearchResultActivity"

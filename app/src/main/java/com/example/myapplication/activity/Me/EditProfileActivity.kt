@@ -4,10 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.icu.text.SimpleDateFormat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,15 +45,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.google.android.material.datepicker.MaterialDatePicker
+import java.util.Date
+import java.util.Locale
 
-class EditProfileActivity : ComponentActivity() {
+class EditProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -169,15 +172,6 @@ private fun EditProfileScreen(activity: Activity) {
                 editor.apply()
                 genderClick = false })
     }
-
-    if (birthClick) {
-        BirthInputDialog(onDismiss = { birthClick = false },
-            onConfirm = { newBirthdate ->
-                val editor = sharedPreferences.edit()
-                editor.putString("babyBirthdate", newBirthdate)
-                editor.apply()
-                birthClick = false })
-    }
 }
 
 @Composable
@@ -205,12 +199,12 @@ fun ButtonWithTextAndIcon(text: String, icon: Painter, onClick: () -> Unit) {
 }
 
 @Composable
-fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit) {
+fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit, color: Boolean = true) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .background(Color.White)
+            .background(if (color) Color.White else Color.Transparent)
             .padding(16.dp)
     ) {
         Row(
@@ -224,6 +218,24 @@ fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit)
     }
 }
 
+@Composable
+fun ButtonWithTwoTextsColor(leftText: String, rightText: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = leftText, fontSize = 18.sp, modifier = Modifier.weight(1f))
+
+            Text(text = rightText, fontSize = 18.sp, textAlign = TextAlign.End)
+        }
+    }
+}
 
 fun saveNameToSharedPreferences(activity: Activity, name: String) {
     val sharedPreferences: SharedPreferences =

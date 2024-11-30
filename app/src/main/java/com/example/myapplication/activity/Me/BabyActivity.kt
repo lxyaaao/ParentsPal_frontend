@@ -4,21 +4,15 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.icu.text.SimpleDateFormat
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -40,31 +34,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.myapplication.R
-import com.example.myapplication.activity.Main.RegisterResponse
-import com.example.myapplication.activity.Main.saveUser
 import com.example.myapplication.api.Baby
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.util.Date
+import java.util.Locale
 
-class BabyActivity : ComponentActivity() {
+class BabyActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -90,6 +77,7 @@ private fun BabyScreen(activity: Activity) {
     var babyGender by remember { mutableStateOf(sharedPreferences.getString("babyGender", "") ?: "") }
     var babyBirth by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
     var babyId by remember { mutableStateOf(sharedPreferences.getInt("babyId", 0)) }
+    var date by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
 
     Scaffold(
         topBar = {
@@ -140,7 +128,7 @@ private fun BabyScreen(activity: Activity) {
 
                 ButtonWithTwoTexts(
                     leftText = "宝宝生日",
-                    rightText = sharedPreferences.getString("babyBirthdate", "") ?: "",
+                    rightText = date,
                     onClick = { birthClick = true }
                 )
             }
@@ -187,12 +175,38 @@ private fun BabyScreen(activity: Activity) {
     }
 
     if (birthClick) {
-        BirthInputDialog(onDismiss = { birthClick = false },
-            onConfirm = { newBirthdate ->
-                val editor = sharedPreferences.edit()
-                editor.putString("babyBirthdate", newBirthdate)
-                editor.apply()
-                birthClick = false })
+        val datePicker = remember {
+            MaterialDatePicker.Builder.datePicker()
+                .setTitleText("选择生日")
+                .build()
+        }
+
+        val fragmentActivity = activity as? androidx.fragment.app.FragmentActivity
+        if (fragmentActivity != null) {
+            val fragmentManager = fragmentActivity.supportFragmentManager
+            val fragmentTag = "DATE_PICKER"
+
+            // 避免重复显示日历
+            val existingFragment = fragmentManager.findFragmentByTag(fragmentTag)
+
+            if (existingFragment == null) {
+                datePicker.show(fragmentManager, fragmentTag)
+            }
+        } else {
+            println("Activity is not a FragmentActivity.")
+        }
+
+        datePicker.addOnPositiveButtonClickListener { selection ->
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val selectedDate = sdf.format(Date(selection))
+            date = selectedDate
+
+            val editor = sharedPreferences.edit()
+            editor.putString("babyBirthdate", date)
+            editor.apply()
+        }
+
+        birthClick = false
     }
 }
 
@@ -244,41 +258,6 @@ fun GenderInputDialog(
         dismissButton = {
             Button(onClick = { onConfirm("Female") }) {
                 Text(text = "Female")
-            }
-        }
-    )
-}
-
-@Composable
-fun BirthInputDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var date by remember { mutableStateOf(TextFieldValue("")) }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text(text = "填写生日") },
-        text = {
-            TextField(
-                value = date,
-                onValueChange = { date = it },
-                placeholder = { Text(text = "输入生日，格式如 0000-00-00", color = Color.Gray) }
-            )
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (date.text.length == 10 &&  date.text[4] == '-' && date.text[7] == '-') {
-                    onConfirm(date.text)
-                } else {
-                    date = TextFieldValue("")
-                }}) {
-                Text(text = "确定")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = "取消")
             }
         }
     )
