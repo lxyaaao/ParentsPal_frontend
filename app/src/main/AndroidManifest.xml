@@ -20,9 +20,11 @@
             android:exported="false" />
         <activity
             android:name=".activity.Main.ImmunizationActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".activity.Main.AlarmActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
             android:exported="false" />
         <activity
             android:name=".activity.Me.BabyActivity"

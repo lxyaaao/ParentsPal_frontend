@@ -4,9 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.icu.text.SimpleDateFormat
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -35,21 +33,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.activity.Main.ShowDatePicker
 import com.example.myapplication.api.Baby
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
-import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.Date
-import java.util.Locale
 
 class BabyActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -175,36 +170,15 @@ private fun BabyScreen(activity: Activity) {
     }
 
     if (birthClick) {
-        val datePicker = remember {
-            MaterialDatePicker.Builder.datePicker()
-                .setTitleText("选择生日")
-                .build()
-        }
-
-        val fragmentActivity = activity as? androidx.fragment.app.FragmentActivity
-        if (fragmentActivity != null) {
-            val fragmentManager = fragmentActivity.supportFragmentManager
-            val fragmentTag = "DATE_PICKER"
-
-            // 避免重复显示日历
-            val existingFragment = fragmentManager.findFragmentByTag(fragmentTag)
-
-            if (existingFragment == null) {
-                datePicker.show(fragmentManager, fragmentTag)
+        ShowDatePicker(
+            onDateSelected = { selectedDate ->
+                date = selectedDate
             }
-        } else {
-            println("Activity is not a FragmentActivity.")
-        }
+        )
 
-        datePicker.addOnPositiveButtonClickListener { selection ->
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val selectedDate = sdf.format(Date(selection))
-            date = selectedDate
-
-            val editor = sharedPreferences.edit()
-            editor.putString("babyBirthdate", date)
-            editor.apply()
-        }
+        val editor = sharedPreferences.edit()
+        editor.putString("babyBirthdate", date)
+        editor.apply()
 
         birthClick = false
     }

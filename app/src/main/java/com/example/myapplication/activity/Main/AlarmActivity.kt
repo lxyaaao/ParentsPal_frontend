@@ -1,14 +1,14 @@
 package com.example.myapplication.activity.Main
 
 import android.app.Activity
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,22 +43,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.api.Baby
-import com.example.myapplication.api.RetrofitClient
+import androidx.fragment.app.FragmentActivity
+import com.example.myapplication.activity.Me.ButtonWithTwoTexts
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONException
 import org.json.JSONObject
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class Alarm(
     val id: Int,
@@ -78,7 +81,7 @@ data class AlarmResponse(
     val active: Boolean
 )
 
-class AlarmActivity : ComponentActivity() {
+class AlarmActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -185,31 +188,51 @@ fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, St
     var hour by remember { mutableStateOf("") }
     var isRecurring by remember { mutableStateOf(true) }
 
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showTimePickerDialog by remember { mutableStateOf(false) }
+    var activityClick by remember { mutableStateOf(false) }
+    var hourClick by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("添加闹钟") },
         text = {
             Column {
-                TextField(
-                    value = alarmDate,
-                    onValueChange = { alarmDate = it },
-                    label = { Text("输入日期，格式如0000-00-00") }
+                ButtonWithTwoTexts(
+                    leftText = "输入日期",
+                    rightText = alarmDate,
+                    onClick = { showDatePickerDialog = true },
+                    color = false
                 )
-                TextField(
-                    value = alarmTime,
-                    onValueChange = { alarmTime = it },
-                    label = { Text("输入时间，格式如00:00:00") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入时间",
+                    rightText = alarmTime,
+                    onClick = { showTimePickerDialog = true },
+                    color = false
                 )
-                TextField(
-                    value = activityType,
-                    onValueChange = { activityType = it },
-                    label = { Text("输入事件") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入事件",
+                    rightText = activityType,
+                    onClick = { activityClick = true },
+                    color = false
                 )
-                TextField(
-                    value = hour,
-                    onValueChange = { hour = it },
-                    label = { Text("输入循环时间") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入循环时间",
+                    rightText = hour,
+                    onClick = { hourClick = true },
+                    color = false
                 )
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
             }
         },
         confirmButton = {
@@ -245,8 +268,122 @@ fun AddAlarmDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, St
             }
         }
     )
+
+    if (showDatePickerDialog) {
+        ShowDatePicker(
+            onDateSelected = { selectedDate ->
+                alarmDate = selectedDate
+            }
+        )
+        showDatePickerDialog = false
+    }
+
+    if (showTimePickerDialog) {
+        ShowTimePickerDialog(
+            onTimeSelected = { selectedTime ->
+                alarmTime = selectedTime
+            }
+        )
+        showTimePickerDialog = false
+    }
+
+    if (activityClick) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text(text = "输入事件") },
+            text = {
+                TextField(
+                    value = activityType,
+                    onValueChange = { activityType = it },
+                    placeholder = { Text(text = "输入事件", color = Color.Gray) }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { activityClick = false }) {
+                    Text(text = "确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { activityClick = false }) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
+
+    if (hourClick) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text(text = "输入循环时间") },
+            text = {
+                TextField(
+                    value = hour,
+                    onValueChange = { hour = it },
+                    placeholder = { Text(text = "输入循环时间", color = Color.Gray) }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { hourClick = false }) {
+                    Text(text = "确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { hourClick = false }) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
 }
 
+@Composable
+fun ShowDatePicker(onDateSelected: (String) -> Unit) {
+    val datePicker = MaterialDatePicker.Builder.datePicker()
+        .setTitleText("选择日期")
+        .build()
+
+    val context = LocalContext.current
+    val fragmentActivity = context as? FragmentActivity
+
+    fragmentActivity?.let { activity ->
+        val fragmentManager = activity.supportFragmentManager
+        val fragmentTag = "DATE_PICKER"
+
+        // Avoid showing multiple DatePickers at the same time
+        val existingFragment = fragmentManager.findFragmentByTag(fragmentTag)
+        if (existingFragment == null) {
+            datePicker.show(fragmentManager, fragmentTag)
+        }
+    }
+
+    // Set a listener to update date when a date is picked
+    datePicker.addOnPositiveButtonClickListener { selection ->
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        onDateSelected(sdf.format(Date(selection)))
+    }
+}
+
+@Composable
+fun ShowTimePickerDialog(onTimeSelected: (String) -> Unit) {
+    val context = LocalContext.current
+    val currentTime = remember { Calendar.getInstance() }
+
+    val hour = currentTime.get(Calendar.HOUR_OF_DAY)
+    val minute = currentTime.get(Calendar.MINUTE)
+
+    val timePickerDialog = TimePickerDialog(
+        context,
+        { _, selectedHour, selectedMinute ->
+            val selectedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+            onTimeSelected("$selectedTime:00")
+        },
+        hour,
+        minute,
+        true
+    )
+
+    timePickerDialog.show()
+}
 
 @Composable
 fun AlarmCard(alarm: Alarm, onDelete: () -> Unit) {

@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.activity.Me.ButtonWithTwoTexts
 import com.example.myapplication.api.Baby
 import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
@@ -75,7 +78,7 @@ data class ImmunizationResponse(
     val nextDue: String
 )
 
-class ImmunizationActivity : ComponentActivity() {
+class ImmunizationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -180,26 +183,41 @@ fun AddImmunizationDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (Str
     var date by remember { mutableStateOf("") }
     var due by remember { mutableStateOf("") }
 
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showDuePickerDialog by remember { mutableStateOf(false) }
+    var vaccineClick by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("添加疫苗") },
         text = {
             Column {
-                TextField(
-                    value = vaccine,
-                    onValueChange = { vaccine = it },
-                    label = { Text("输入疫苗名字") }
+                ButtonWithTwoTexts(
+                    leftText = "输入疫苗名字",
+                    rightText = vaccine,
+                    onClick = { vaccineClick = true },
+                    color = false
                 )
-                TextField(
-                    value = date,
-                    onValueChange = { date = it },
-                    label = { Text("输入疫苗时间，格式如0000-00-00") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入疫苗时间",
+                    rightText = date,
+                    onClick = { showDatePickerDialog = true },
+                    color = false
                 )
-                TextField(
-                    value = due,
-                    onValueChange = { due = it },
-                    label = { Text("输入有效时间，格式如0000-00-00") }
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+                ButtonWithTwoTexts(
+                    leftText = "输入有效时间",
+                    rightText = due,
+                    onClick = { showDuePickerDialog = true },
+                    color = false
                 )
+
+                Divider(color = Color.LightGray, thickness = 1.dp)
             }
         },
         confirmButton = {
@@ -238,6 +256,48 @@ fun AddImmunizationDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (Str
             }
         }
     )
+
+    if (showDatePickerDialog) {
+        ShowDatePicker(
+            onDateSelected = { selectedDate ->
+                date = selectedDate
+            }
+        )
+        showDatePickerDialog = false
+    }
+
+    if (showDuePickerDialog) {
+        ShowDatePicker(
+            onDateSelected = { selectedTime ->
+                due = selectedTime
+            }
+        )
+        showDuePickerDialog = false
+    }
+
+    if (vaccineClick) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = { Text(text = "输入疫苗名字") },
+            text = {
+                TextField(
+                    value = vaccine,
+                    onValueChange = { vaccine = it },
+                    placeholder = { Text(text = "输入事件", color = Color.Gray) }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { vaccineClick = false }) {
+                    Text(text = "确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { vaccineClick = false }) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
 }
 
 
