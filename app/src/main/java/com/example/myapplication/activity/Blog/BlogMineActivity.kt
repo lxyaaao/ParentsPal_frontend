@@ -173,6 +173,11 @@ private fun CenterAlignedTopAppBarExample(
     )
 
     if (addClick) {
+        val sharedPreferences: SharedPreferences =
+            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putInt("articleId", 0).apply()
+
         val intent = Intent(activity, BlogAddActivity::class.java)
         activity.startActivity(intent)
         activity.finish()

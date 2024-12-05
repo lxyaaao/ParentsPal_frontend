@@ -140,3 +140,25 @@ suspend fun sendDeleteRequest(apiString: String): String {
         }
     }
 }
+
+suspend fun sendPutRequest(apiString: String, requestBody: String): String {
+    return withContext(Dispatchers.IO) {
+        val urlString = "http://parentspal.natapp1.cc/"
+        val url = URL(urlString + apiString)
+
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "PUT"
+        connection.doOutput = true
+
+        try {
+            connection.outputStream.use { outputStream ->
+                outputStream.write(requestBody.toByteArray(Charsets.UTF_8))
+            }
+            connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+        } catch (e: Exception) {
+            "Error: ${connection.responseCode} - ${e.message}"
+        } finally {
+            connection.disconnect()
+        }
+    }
+}

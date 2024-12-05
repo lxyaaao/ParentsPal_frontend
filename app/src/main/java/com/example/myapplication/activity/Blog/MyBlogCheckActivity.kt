@@ -5,14 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.snapping.SnapPosition
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,59 +24,48 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
-import com.example.myapplication.api.Baby
-import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
-import com.example.myapplication.utils.sendDeleteRequest
+import com.example.myapplication.utils.sendPutRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONException
 import org.json.JSONObject
-import java.time.LocalDate
 
 data class Immunization(
     val id: Int,
@@ -219,81 +204,138 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                CommentSection(articleId, activity)
-
-                var isLiked by remember { mutableStateOf(false) }
-                var isSaved by remember { mutableStateOf(false) }
-                var commentText by remember { mutableStateOf("") }
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Row(
+                Box {
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomStart),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp)
                     ) {
-                        IconButton(
-                            onClick = {
-                                isLiked = !isLiked
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Favorite,
-                                contentDescription = "Like",
-                                tint = if (isLiked) Color.Red else Color.Gray
-                            )
-                        }
+                        CommentSection(articleId, activity)
+                    }
 
-                        IconButton(
-                            onClick = {
-                                isSaved = !isSaved
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Bookmark,
-                                contentDescription = "Bookmark",
-                                tint = if (isSaved) Color(0xFFFFC107) else Color.Gray
-                            )
-                        }
+                    // TODO: Get if the article has been liked or saved
+                    var isLiked by remember { mutableStateOf(false) }
+                    var isSaved by remember { mutableStateOf(false) }
+                    var commentText by remember { mutableStateOf("") }
+                    var opLikes by remember { mutableStateOf(1) }
+                    var opSaves by remember { mutableStateOf(1) }
 
-                        TextField(
-                            value = commentText,
-                            onValueChange = { commentText = it },
-                            label = { Text("Add a comment...") },
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp)
-                                .padding(start = 4.dp, end = 4.dp),
-                            singleLine = true
-                        )
-
-                        IconButton(
-                            onClick = {
-                                if (commentText.isNotBlank()) {
-                                    val apiPath = "comment"
-
-                                    val requestBody = JSONObject().apply {
-                                        put("articleId", articleId)
-                                        article?.let { put("userId", it.userId) }
-                                        put("content", commentText)
-                                    }
-                                    println(requestBody)
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
-                                        println(responseString)
-                                    }
-
-                                    commentText = ""
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
+                                .align(Alignment.BottomStart),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Send,
-                                contentDescription = "Submit Comment",
-                                tint = Color.Gray
+                            Box(modifier = Modifier.height(48.dp)) {
+                                IconButton(
+                                    onClick = {
+                                        isLiked = !isLiked
+
+                                        if (!isLiked) {
+                                            opLikes = 2
+                                        }
+
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            val apiString = "article/likes/$articleId&$opLikes"
+                                            sendPutRequest(apiString, "")
+                                        }
+
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                        .align(Alignment.TopCenter)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Favorite,
+                                        contentDescription = "Like",
+                                        tint = if (isLiked) Color.Red else Color.Gray
+                                    )
+                                }
+
+                                Text(
+                                    text = article?.likes.toString(),
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(4.dp)
+                                )
+                            }
+
+                            Box(modifier = Modifier.height(48.dp)) {
+                                IconButton(
+                                    onClick = {
+                                        isSaved = !isSaved
+
+                                        if (!isSaved) {
+                                            opSaves = 2
+                                        }
+
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            val apiString = "article/saves/$articleId&$opSaves"
+                                            sendPutRequest(apiString, "")
+                                        }
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                        .align(Alignment.TopCenter)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Bookmark,
+                                        contentDescription = "Bookmark",
+                                        tint = if (isSaved) Color(0xFFFFC107) else Color.Gray
+                                    )
+                                }
+
+                                Text(
+                                    text = article?.saves.toString(),
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(4.dp)
+                                )
+                            }
+
+                            TextField(
+                                value = commentText,
+                                onValueChange = { commentText = it },
+                                label = { Text("Add a comment...") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp)
+                                    .padding(start = 4.dp, end = 4.dp),
+                                singleLine = true
                             )
+
+                            IconButton(
+                                onClick = {
+                                    if (commentText.isNotBlank()) {
+                                        val apiPath = "comment"
+
+                                        val requestBody = JSONObject().apply {
+                                            put("articleId", articleId)
+                                            article?.let { put("userId", it.userId) }
+                                            put("content", commentText)
+                                        }
+                                        println(requestBody)
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            val responseString = sendPostRequestWithRequest(
+                                                apiPath,
+                                                requestBody.toString()
+                                            )
+                                            println(responseString)
+                                        }
+
+                                        commentText = ""
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Send,
+                                    contentDescription = "Submit Comment",
+                                    tint = Color.Gray
+                                )
+                            }
                         }
                     }
                 }
@@ -303,6 +345,12 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
     if (backFlag) {
         val intent = Intent(activity, BlogMineActivity::class.java)
+        activity.startActivity(intent)
+        activity.finish()
+    }
+
+    if (editClick) {
+        val intent = Intent(activity, BlogAddActivity::class.java)
         activity.startActivity(intent)
         activity.finish()
     }
@@ -335,7 +383,8 @@ fun CommentSection(articleId: Int, activity: Activity) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(modifier = Modifier.fillMaxWidth()
+                .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
                 CommentItem(comment = comment)
             }
