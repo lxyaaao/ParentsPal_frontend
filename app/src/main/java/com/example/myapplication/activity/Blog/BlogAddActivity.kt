@@ -92,9 +92,24 @@ private fun BlogAddScreen(activity: Activity) {
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        val intent = Intent(activity, BlogMineActivity::class.java)
-                        activity.startActivity(intent)
-                        activity.finish() }
+                        val sharedPreferences: SharedPreferences =
+                            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                        val articleId: Int = sharedPreferences.getInt("articleId", 0)
+
+                        if (articleId == 0) {
+                            val editor = sharedPreferences.edit()
+                            editor.putBoolean("refreshArticleState", true)
+                            editor.apply()
+
+                            val intent = Intent(activity, BlogMineActivity::class.java)
+                            activity.startActivity(intent)
+                            activity.finish()
+                        } else {
+                            val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                            activity.startActivity(intent)
+                            activity.finish()
+                        }
+                    }
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
@@ -151,12 +166,9 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    val name = getNameFromSharedPreferences(activity)
-    val calendar = Calendar.getInstance()
-    val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(calendar.time)
+    val parentId = sharedPreferences.getInt("parentId", 0)
     var content by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
-
 
     val articleId: Int = sharedPreferences.getInt("articleId", 0)
 
@@ -186,22 +198,21 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
             onValueChange = { title = it },
             label = { Text("输入标题") },
             modifier = Modifier
-                .fillMaxWidth() // 宽度填满
-                .padding(bottom = 8.dp) // 底部间距
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 输入内容
         TextField(
             value = content,
             onValueChange = { content = it },
             label = { Text("输入内容") },
             modifier = Modifier
-                .fillMaxWidth() // 宽度填满
-                .heightIn(min = 120.dp) // 高度设置为最小120dp，适应更高的输入框
-                .padding(bottom = 8.dp) // 底部间距
-                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp)) // 可选：设置边框
+                .fillMaxWidth()
+                .heightIn(min = 120.dp)
+                .padding(bottom = 8.dp)
+                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -212,8 +223,9 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
             try {
                 val apiPath = "article"
 
-                // TODO: Add JSON request body
                 val requestBody = JSONObject().apply {
+                    put("userId", parentId)
+                    put("title", title)
                     put("content", content)
                 }
 
@@ -223,14 +235,6 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
                 val response = gson.fromJson(responseString, RegisterResponse::class.java)
                 println("Parsed response: $response")
 
-                if (response.status) {
-                    val babiesList = response.babies ?: emptyList()
-                    saveUser(activity, response.parentId, response.parentName, babiesList)
-                } else {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
             } catch (e: Exception) {
                 println("Json error")
             }

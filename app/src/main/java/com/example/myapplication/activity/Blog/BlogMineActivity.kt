@@ -27,6 +27,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -39,12 +40,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.activity.Main.BottomNavigationBar
 import com.example.myapplication.activity.Main.HomeScreen
-import com.example.myapplication.activity.Main.Immunization
-import com.example.myapplication.activity.Main.ImmunizationResponse
 import com.example.myapplication.activity.Main.NavItem
 import com.example.myapplication.activity.Main.PersonScreen
 import com.example.myapplication.activity.Main.QuestionAnswerScreen
-import com.example.myapplication.activity.Main.saveImmunizations
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.google.gson.Gson
@@ -191,9 +189,10 @@ fun MyShareContent(activity: Activity) {
 
     val parentId = sharedPreferences.getInt("parentId", 0)
     var articles: List<Article> by remember { mutableStateOf(emptyList()) }
+    val refreshState = sharedPreferences.getBoolean("refreshArticleState", false)
 
     val apiString = "user-article/$parentId"
-    CoroutineScope(Dispatchers.IO).launch {
+    LaunchedEffect(refreshState) {
         val response = sendGetRequest(apiString)
         try {
             val gson = Gson()
@@ -202,6 +201,10 @@ fun MyShareContent(activity: Activity) {
         } catch (e: Exception) {
             println("Json error: $response")
         }
+
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("refreshArticleState", false)
+        editor.apply()
     }
 
     LazyColumn(
@@ -213,6 +216,8 @@ fun MyShareContent(activity: Activity) {
             BlogContentCard(blogContent, onClick = {
                 val editor = sharedPreferences.edit()
                 editor.putInt("articleId", blogContent.articleId).apply()
+                editor.putBoolean("refreshCommentState", false)
+                editor.apply()
 
                 val intent = Intent(activity, MyBlogCheckActivity::class.java)
                 activity.startActivity(intent)

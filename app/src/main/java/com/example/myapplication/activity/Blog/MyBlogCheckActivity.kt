@@ -26,9 +26,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -59,6 +62,7 @@ import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.sendDeleteRequest
 import com.example.myapplication.utils.sendPutRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -66,21 +70,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-
-data class Immunization(
-    val id: Int,
-    val vaccineName: String,
-    val dateGiven: String,
-    val nextDue: String
-)
-
-data class ImmunizationResponse(
-    val id: Int,
-    val babyId: Int,
-    val vaccineName: String,
-    val dateGiven: String,
-    val nextDue: String
-)
 
 class MyBlogCheckActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,6 +88,7 @@ class MyBlogCheckActivity : ComponentActivity() {
 private fun MyBlogCheckScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var editClick by remember { mutableStateOf(false) }
+    var deleteClick by remember { mutableStateOf(false) }
 
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
@@ -175,8 +165,19 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             .padding(4.dp),
                         contentScale = ContentScale.Crop
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
+
                     article?.let { Text(text = it.username, style = TextStyle(fontSize = 16.sp)) }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(onClick = { deleteClick = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete"
+                        )
+                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -205,20 +206,22 @@ private fun MyBlogCheckScreen(activity: Activity) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Box {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        CommentSection(articleId, activity)
-                    }
-
                     // TODO: Get if the article has been liked or saved
                     var isLiked by remember { mutableStateOf(false) }
                     var isSaved by remember { mutableStateOf(false) }
                     var commentText by remember { mutableStateOf("") }
                     var opLikes by remember { mutableStateOf(1) }
                     var opSaves by remember { mutableStateOf(1) }
+                    val refreshCommentState = sharedPreferences.getBoolean("refreshCommentState", false)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp)
+                    ) {
+                        CommentSection(articleId, refreshCommentState, activity)
+                    }
+
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -326,6 +329,10 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                         }
 
                                         commentText = ""
+
+                                        val editor = sharedPreferences.edit()
+                                        editor.putBoolean("refreshCommentState", true)
+                                        editor.apply()
                                     }
                                 },
                                 modifier = Modifier.size(32.dp)
@@ -354,25 +361,59 @@ private fun MyBlogCheckScreen(activity: Activity) {
         activity.startActivity(intent)
         activity.finish()
     }
+
+    if (deleteClick) {
+        AlertDialog(
+            onDismissRequest = { deleteClick = false },
+            title = { Text("是否删除博文？") },
+            text = { Text("删除后无法恢复，您确定要删除此博文吗？") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val apiString = "article/$articleId"
+                        CoroutineScope(Dispatchers.IO).launch {
+                            sendDeleteRequest(apiString)
+                        }
+
+                        val intent = Intent(activity, BlogMineActivity::class.java)
+                        activity.startActivity(intent)
+                        activity.finish()
+                    }
+                ) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    deleteClick = false
+                }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun CommentSection(articleId: Int, activity: Activity) {
+fun CommentSection(articleId: Int, refreshState: Boolean, activity: Activity) {
     val apiString = "comment-article/$articleId"
     var comments: List<Comment> by remember { mutableStateOf(emptyList()) }
 
-    LaunchedEffect(articleId) {
-        while (true) {
-            delay(100)
-            val response = sendGetRequest(apiString)
-            try {
-                val gson = Gson()
-                val apiResponse = gson.fromJson(response, CommentResponse::class.java)
-                comments = apiResponse.data
-            } catch (e: Exception) {
-                println("Json error: $response")
-            }
+    LaunchedEffect(refreshState) {
+        val response = sendGetRequest(apiString)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(response, CommentResponse::class.java)
+            comments = apiResponse.data
+        } catch (e: Exception) {
+            println("Json error: $response")
         }
+
+        val sharedPreferences: SharedPreferences =
+            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("refreshCommentState", false)
+        editor.apply()
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
