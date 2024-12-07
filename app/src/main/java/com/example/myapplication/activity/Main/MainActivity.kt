@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -52,15 +53,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.activity.Blog.BlogActivity
 import com.example.myapplication.activity.Me.MeActivity
-import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +78,35 @@ class MainActivity : ComponentActivity() {
                 MainScreen(this)
             }
         }
+        FirebaseApp.initializeApp(this)
+        // 获取 Firebase token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
 
+            // 获取到新的 FCM token
+            val token = task.result
+            Log.d(TAG, "FCM Token: $token")
+
+            val sharedPreferences: SharedPreferences =
+                this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            var myName = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
+
+            // 你可以在这里将 token 发送到你的服务器或进行其他处理
+            lifecycleScope.launch {
+                val requestBody = JSONObject().apply{
+                    put("username", myName)
+                    put("token", token)
+                }
+                sendPostRequestWithRequest("api/fcm/token", requestBody.toString())
+            }
+        }
+
+    }
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }
 
