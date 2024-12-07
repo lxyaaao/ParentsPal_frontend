@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
             // 你可以在这里将 token 发送到你的服务器或进行其他处理
             lifecycleScope.launch {
                 val requestBody = JSONObject().apply{
-                    put("username", myName)
+                    put("userName", myName)
                     put("token", token)
                 }
                 sendPostRequestWithRequest("api/fcm/token", requestBody.toString())
