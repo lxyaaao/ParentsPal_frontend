@@ -76,6 +76,7 @@ dependencies {
     implementation("com.google.guava:guava:27.0.1-android")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.google.firebase:firebase-messaging:23.0.0")
 }
 
 android {

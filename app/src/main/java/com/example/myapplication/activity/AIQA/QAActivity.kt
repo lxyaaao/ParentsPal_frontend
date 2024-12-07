@@ -57,7 +57,7 @@ import com.example.myapplication.activity.Me.UserListActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils
 import com.example.myapplication.utils.NetworkUtils.sendAIRequest
-import com.example.myapplication.utils.NetworkUtils.sendPostRequest
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -347,10 +347,13 @@ private fun ConversationScreen(activity: Activity) {
                         CoroutineScope(Dispatchers.Main).launch {
 //                            val response = sendGetRequest("http://www.baidu.com")
                             if (isUserConversation()) {
-                                val apiString =
-                                    "api/conversations/message?senderUsername=${myName}&receiverUsername=${conversationName}&content=${currentText.value}"
-                                val response =
-                                    sendPostRequest(apiString)
+                                val apiPath = "api/conversations/message"
+                                val requestBody = JSONObject().apply{
+                                    put("senderUsername", myName)
+                                    put("receiverUsername", ConversationInfo.userName)
+                                    put("content", currentText.value)
+                                }
+                                sendPostRequestWithRequest(apiPath, requestBody.toString())
 
                             } else {
                                 val response =

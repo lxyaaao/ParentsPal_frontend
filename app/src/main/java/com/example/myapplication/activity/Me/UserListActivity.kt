@@ -1,8 +1,12 @@
 package com.example.myapplication.activity.Me
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -38,6 +42,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +57,12 @@ import androidx.compose.ui.unit.dp
 import com.example.myapplication.R
 import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
 class UserListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,6 +82,14 @@ class UserListActivity : ComponentActivity() {
 private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
     var backFlag by remember { mutableStateOf(false) }
     var selectedTabIndex by remember { mutableStateOf(selectedTabIndex) }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    var myName by remember { mutableStateOf(sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字") }
+    var users by remember { mutableStateOf<List<User>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        users = FollowingUserList(myName)
+    }
 
     Scaffold(
         topBar = {
@@ -130,7 +149,6 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
                                     .fillMaxSize()
                                     .padding(16.dp)
                             ) {
-                                val users: List<User> = FollowingUserList()
                                 items(users) { user ->
                                     UserListItem(user = user, activity)
                                 }
@@ -143,7 +161,6 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
                                     .fillMaxSize()
                                     .padding(16.dp)
                             ) {
-                                val users: List<User> = FollowingUserList()
                                 items(users) { user ->
                                     UserListItem(user = user, activity)
                                 }
@@ -197,12 +214,40 @@ fun UserListItem(user: User, activity: Activity) {
     }
 }
 
-fun FollowingUserList(): List<User> {
-    val users = listOf(
-        User(avatarResId = R.drawable.baseline_account_circle_24, username = "Alice"),
-        User(avatarResId = R.drawable.baseline_account_circle_24, username = "Bob"),
-    )
-    return users
+fun parseConversationList(response: String): List<String> {
+    val jsonObject = JSONObject(response)
+    val dataArray: JSONArray = jsonObject.getJSONArray("data")
+    val namesSet = mutableSetOf<String>()
+
+    for (i in 0 until dataArray.length()) {
+        val messageObject = dataArray.getJSONObject(i)
+        val senderName = messageObject.getString("sender_name")
+        val receiverName = messageObject.getString("receiver_name")
+        namesSet.add(senderName)
+        namesSet.add(receiverName)
+    }
+
+    return namesSet.toList()
+}
+
+
+
+@SuppressLint("NewApi")
+suspend fun FollowingUserList(myName: String): List<User> {
+    return withContext(Dispatchers.IO) {
+        // Simulate network call
+        val apiPath = "api/conversations/latest-messages?username=${myName}"
+        val response = sendGetRequest(apiPath)
+        Log.d("response", response)
+        var list = emptyList<String>()
+        try {
+            list = parseConversationList(response)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            list
+        }
+        list.map { User(avatarResId = R.drawable.baseline_account_circle_24, username = it) }
+    }
 }
 
 data class User(val avatarResId: Int, val username: String)
