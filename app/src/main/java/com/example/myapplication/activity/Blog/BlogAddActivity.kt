@@ -48,6 +48,7 @@ import com.example.myapplication.activity.Me.getNameFromSharedPreferences
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.sendPutRequest
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -220,35 +221,50 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
 
     if(checkClick) {
         LaunchedEffect(Unit) {
-            try {
-                val apiPath = "article"
+            if (articleId == 0) {
+                try {
+                    val apiPath = "article"
 
-                val requestBody = JSONObject().apply {
-                    put("userId", parentId)
-                    put("title", title)
-                    put("content", content)
+                    val requestBody = JSONObject().apply {
+                        put("userId", parentId)
+                        put("title", title)
+                        put("content", content)
+                    }
+
+                    val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+                    val gson = Gson()
+                    val response = gson.fromJson(responseString, RegisterResponse::class.java)
+                    println("Parsed response: $response")
+
+                } catch (e: Exception) {
+                    println("Json error")
                 }
 
-                val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+                val intent = Intent(activity, BlogMineActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            } else {
+                // TODO: need to update put method if backend changes
+                try {
+                    val apiPath = "article/$articleId?title=$title&content=$content"
 
-                val gson = Gson()
-                val response = gson.fromJson(responseString, RegisterResponse::class.java)
-                println("Parsed response: $response")
+                    println(apiPath)
 
-            } catch (e: Exception) {
-                println("Json error")
+                    val responseString = sendPutRequest(apiPath, "")
+
+                    val gson = Gson()
+                    val response = gson.fromJson(responseString, RegisterResponse::class.java)
+                    println("Parsed response: $response")
+
+                } catch (e: Exception) {
+                    println("Json error")
+                }
+
+                val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
             }
-
-        }
-
-        if (articleId == 0) {
-            val intent = Intent(activity, BlogMineActivity::class.java)
-            activity.startActivity(intent)
-            activity.finish()
-        } else {
-            val intent = Intent(activity, MyBlogCheckActivity::class.java)
-            activity.startActivity(intent)
-            activity.finish()
         }
 
     }

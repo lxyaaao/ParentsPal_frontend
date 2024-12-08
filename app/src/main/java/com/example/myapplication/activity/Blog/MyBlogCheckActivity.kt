@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -67,7 +69,6 @@ import com.example.myapplication.utils.sendPutRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -212,18 +213,17 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     var commentText by remember { mutableStateOf("") }
                     var opLikes by remember { mutableStateOf(1) }
                     var opSaves by remember { mutableStateOf(1) }
-                    val refreshCommentState = sharedPreferences.getBoolean("refreshCommentState", false)
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(bottom = 16.dp)
                     ) {
-                        CommentSection(articleId, refreshCommentState, activity)
+                        CommentSection(articleId, activity)
                     }
 
-
                     Box(modifier = Modifier.fillMaxSize()) {
+                        // TODO: refresh on time
                         Row(
                             modifier = Modifier
                                 .align(Alignment.BottomStart),
@@ -333,6 +333,10 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                         val editor = sharedPreferences.edit()
                                         editor.putBoolean("refreshCommentState", true)
                                         editor.apply()
+
+                                        val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                                        activity.startActivity(intent)
+                                        activity.finish()
                                     }
                                 },
                                 modifier = Modifier.size(32.dp)
@@ -395,7 +399,11 @@ private fun MyBlogCheckScreen(activity: Activity) {
 }
 
 @Composable
-fun CommentSection(articleId: Int, refreshState: Boolean, activity: Activity) {
+fun CommentSection(articleId: Int, activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val refreshState = sharedPreferences.getBoolean("refreshCommentState", false)
+
     val apiString = "comment-article/$articleId"
     var comments: List<Comment> by remember { mutableStateOf(emptyList()) }
 
@@ -409,8 +417,6 @@ fun CommentSection(articleId: Int, refreshState: Boolean, activity: Activity) {
             println("Json error: $response")
         }
 
-        val sharedPreferences: SharedPreferences =
-            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
         editor.putBoolean("refreshCommentState", false)
         editor.apply()
@@ -427,7 +433,7 @@ fun CommentSection(articleId: Int, refreshState: Boolean, activity: Activity) {
         LazyColumn(modifier = Modifier.fillMaxWidth()
                 .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
-                CommentItem(comment = comment)
+                CommentItem(comment = comment, activity)
             }
         }
 
@@ -435,24 +441,119 @@ fun CommentSection(articleId: Int, refreshState: Boolean, activity: Activity) {
 }
 
 @Composable
-fun CommentItem(comment: Comment) {
-    Column(modifier = Modifier.padding(8.dp)) {
-        Text(
-            text = comment.username,
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        )
+fun CommentItem(comment: Comment, activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val parentId = sharedPreferences.getInt("parentId", 0)
 
-        Text(
-            text = "${comment.time.substring(0, 10)} ${comment.time.substring(11)}",
-            style = TextStyle(fontSize = 12.sp, color = Color.Gray)
-        )
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-        Text(
-            text = comment.content,
-            style = TextStyle(fontSize = 14.sp)
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
+                .weight(1f)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            showDeleteDialog = true
+                        }
+                    )
+                }
+        ) {
+            Text(
+                text = comment.username,
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "${comment.time.substring(0, 10)} ${comment.time.substring(11)}",
+                style = TextStyle(fontSize = 12.sp, color = Color.Gray)
+            )
+
+            Text(
+                text = comment.content,
+                style = TextStyle(fontSize = 14.sp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        var isLiked by remember { mutableStateOf(false) }
+        var opLikes by remember { mutableStateOf(1) }
+
+        Box(modifier = Modifier.height(48.dp)) {
+            IconButton(
+                onClick = {
+                    isLiked = !isLiked
+
+                    if (!isLiked) {
+                        opLikes = 2
+                    }
+
+                    // TODO: refresh on time
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val apiString = "comment/likes/${comment.commentId}&$opLikes"
+                        val response = sendPutRequest(apiString, "")
+                        println(response)
+                    }
+                },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = "Like",
+                    tint = if (isLiked) Color.Red else Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Text(
+                text = comment.likes.toString(),
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(4.dp)
+            )
+        }
+
+    }
+
+    if (showDeleteDialog && comment.userId == parentId) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("是否删除该评论？") },
+            text = { Text("您确定要删除此评论吗？") },
+            confirmButton = {
+                Button(onClick = {
+                    val apiString = "comment/${comment.commentId}"
+                    CoroutineScope(Dispatchers.IO).launch {
+                        sendDeleteRequest(apiString)
+                    }
+
+                    val editor = sharedPreferences.edit()
+                    editor.putBoolean("refreshCommentState", true)
+                    editor.apply()
+
+                    showDeleteDialog = false
+
+                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
 
