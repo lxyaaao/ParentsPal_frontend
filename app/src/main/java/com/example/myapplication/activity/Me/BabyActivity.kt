@@ -194,12 +194,12 @@ fun NameInputDialog(
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text(text = "修改名字") },
+        title = { Text(text = "修改宝宝名字") },
         text = {
             TextField(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = { Text(text = "输入新名字", color = Color.Gray) }
+                placeholder = { Text(text = "输入宝宝新名字", color = Color.Gray) }
             )
         },
         confirmButton = {
@@ -222,7 +222,7 @@ fun GenderInputDialog(
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text(text = "选择性别") },
+        title = { Text(text = "选择宝宝性别") },
         text = { },
         confirmButton = {
             Button(onClick = { onConfirm("Male") }) {

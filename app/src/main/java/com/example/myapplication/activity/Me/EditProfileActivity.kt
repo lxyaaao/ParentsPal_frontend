@@ -34,6 +34,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,12 +75,10 @@ private fun EditProfileScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
     var profileClick by remember { mutableStateOf(false) }
     var nameClick by remember { mutableStateOf(false) }
-    var genderClick by remember { mutableStateOf(false) }
-    var birthClick by remember { mutableStateOf(false) }
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var name by remember { mutableStateOf(sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字") }
+    var name by remember { mutableStateOf(sharedPreferences.getString("name", "昵称") ?: "昵称") }
 
     Scaffold(
         topBar = {
@@ -122,7 +122,7 @@ private fun EditProfileScreen(activity: Activity) {
                 ButtonWithTwoTexts(
                     leftText = "名字",
                     rightText = name,
-                    onClick = {  }
+                    onClick = { nameClick = true }
                 )
             }
         }
@@ -147,7 +147,7 @@ private fun EditProfileScreen(activity: Activity) {
                     painter = painterResource(id = R.drawable.baseline_account_circle_24),
                     contentDescription = "Large Avatar",
                     modifier = Modifier
-                        .size(300.dp) // 大图大小
+                        .size(300.dp)
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
@@ -156,21 +156,12 @@ private fun EditProfileScreen(activity: Activity) {
     }
 
     if (nameClick) {
-        NameInputDialog(initialName = name,
+        NameChangeDialog(initialName = name,
             onDismiss = { nameClick = false },
             onConfirm = { newName ->
                 name = newName
                 saveNameToSharedPreferences(activity, newName)
                 nameClick = false })
-    }
-
-    if (genderClick) {
-        GenderInputDialog(onDismiss = { genderClick = false },
-            onConfirm = { newGender ->
-                val editor = sharedPreferences.edit()
-                editor.putString("babyGender", newGender)
-                editor.apply()
-                genderClick = false })
     }
 }
 
@@ -219,22 +210,34 @@ fun ButtonWithTwoTexts(leftText: String, rightText: String, onClick: () -> Unit,
 }
 
 @Composable
-fun ButtonWithTwoTextsColor(leftText: String, rightText: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = leftText, fontSize = 18.sp, modifier = Modifier.weight(1f))
+fun NameChangeDialog(
+    initialName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(TextFieldValue(initialName)) }
 
-            Text(text = rightText, fontSize = 18.sp, textAlign = TextAlign.End)
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(text = "修改名字") },
+        text = {
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = { Text(text = "输入新名字", color = Color.Gray) }
+            )
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(name.text) }) {
+                Text(text = "确定")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = "取消")
+            }
         }
-    }
+    )
 }
 
 fun saveNameToSharedPreferences(activity: Activity, name: String) {
@@ -248,5 +251,5 @@ fun saveNameToSharedPreferences(activity: Activity, name: String) {
 fun getNameFromSharedPreferences(activity: Activity): String {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    return sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
+    return sharedPreferences.getString("name", "昵称") ?: "昵称"
 }
