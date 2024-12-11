@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Recommend
@@ -227,22 +226,6 @@ fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             // NavigationRailItem 2
-            NavigationRailItem(
-                icon = {
-                    Icon(
-                        Icons.Filled.Favorite,
-                        contentDescription = "关注"
-                    )
-                },
-                label = { Text("关注") },
-                selected = selectedItem == 1,
-                onClick = {
-                    selectedItem = 1
-                    // 处理点击事件
-                }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            // NavigationRailItem 3
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Person, contentDescription = "我的") },
                 label = { Text("我的") },

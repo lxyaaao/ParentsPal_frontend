@@ -110,19 +110,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-@Composable
-fun FilledButtonExample(onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Button(onClick = { onClick() }) {
-            Text("Filled")
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CenterAlignedTopAppBarExample() {
@@ -151,18 +138,6 @@ private fun CenterAlignedTopAppBarExample() {
         ScrollContent(innerPadding)
     }
 }
-
-@Composable
-fun FinishAffinityButton() {
-    val context = LocalContext.current
-    IconButton(onClick = { (context as? Activity)?.finishAffinity() }) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Localized description"
-        )
-    }
-}
-
 
 @Composable
 fun ScrollContent(innerPadding: PaddingValues) {
@@ -294,14 +269,16 @@ fun QuestionAnswerScreen(activity: Activity) {
     val intent = Intent(activity, QAActivity::class.java)
     activity.startActivity(intent)
     activity.overridePendingTransition(0, 0)
-    activity.finish()}
+    activity.finish()
+}
 
 @Composable
 fun PersonScreen(activity: Activity) {
     val intent = Intent(activity, MeActivity::class.java)
     activity.startActivity(intent)
     activity.overridePendingTransition(0, 0)
-    activity.finish()}
+    activity.finish()
+}
 
 
 @Composable
@@ -339,16 +316,17 @@ fun getCheckin(activity: Activity): String {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
+    val babyId: Int = sharedPreferences.getInt("babyId", 0)
+    fetchGrowthTracking(sharedPreferences, babyId)
+
+    val checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
 
     val StringBuilder = StringBuilder()
     for (i in checkIns.indices.reversed()) {
         val checkIn = checkIns[i]
         StringBuilder.append("${checkIn.date}  身高:${checkIn.height}cm 体重:${checkIn.weight}kg\n")
     }
-    val String = StringBuilder.toString()
-
-    return String
+    return StringBuilder.toString()
 }
 
 @Composable
@@ -356,16 +334,18 @@ fun getImmunization(activity: Activity): String {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var immunizations by remember { mutableStateOf(loadImmunizations(sharedPreferences)) }
+    val babyId: Int = sharedPreferences.getInt("babyId", 0)
+    fetchImmunizations(sharedPreferences, babyId)
+
+    val immunizations by remember { mutableStateOf(loadImmunizations(sharedPreferences)) }
 
     val StringBuilder = StringBuilder()
     for (i in immunizations.indices.reversed()) {
         val immunization = immunizations[i]
         StringBuilder.append("${immunization.vaccineName}\n")
     }
-    val String = StringBuilder.toString()
 
-    return String
+    return StringBuilder.toString()
 }
 
 @Composable
@@ -373,7 +353,10 @@ fun getAlarm(activity: Activity): String {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-    var alarms by remember { mutableStateOf(loadAlarms(sharedPreferences)) }
+    val babyId: Int = sharedPreferences.getInt("babyId", 0)
+    fetchAlarms(sharedPreferences, babyId)
+
+    val alarms by remember { mutableStateOf(loadAlarms(sharedPreferences)) }
 
     val StringBuilder = StringBuilder()
     for (i in alarms.indices.reversed()) {

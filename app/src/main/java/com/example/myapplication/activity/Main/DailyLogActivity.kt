@@ -161,10 +161,9 @@ private fun DailyLogScreen(activity: Activity) {
                 val newCheckIn = CheckIn(date, height, weight)
                 checkIns = checkIns + newCheckIn // 添加新记录
                 saveCheckIns(sharedPreferences, checkIns) // 更新存储
-                fetchGrowthTracking(activity, sharedPreferences, babyId)
+                fetchGrowthTracking(sharedPreferences, babyId)
             })
         }
-
 }
 
 @Composable
@@ -368,7 +367,7 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
     }
 }
 
-fun fetchGrowthTracking(activity: Activity, sharedPreferences: SharedPreferences, babyId: Int) {
+fun fetchGrowthTracking(sharedPreferences: SharedPreferences, babyId: Int) {
     val apiString = "api/v1/babies/$babyId/growth"
     CoroutineScope(Dispatchers.IO).launch {
         val response = sendGetRequest(apiString)
