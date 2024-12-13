@@ -175,7 +175,7 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
 
     if (articleId != 0 ) {
         LaunchedEffect(articleId) {
-            val apiString = "article/$articleId"
+            val apiString = "api/article/$articleId"
             val response = sendGetRequest(apiString)
             try {
                 println(response)
@@ -246,7 +246,7 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
                 activity.finish()
             } else {
                 try {
-                    val apiPath = "/api/article/update/${articleId}"
+                    val apiPath = "api/article/update/${articleId}"
 
                     val requestBody = JSONObject().apply {
                         put("title", title)
