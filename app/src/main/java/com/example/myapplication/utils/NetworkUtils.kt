@@ -18,7 +18,7 @@ object NetworkUtils {
             try {
                 connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                "Error: ${connection.responseCode} - ${e.message}"
             } finally {
                 connection.disconnect()
             }
@@ -52,7 +52,7 @@ object NetworkUtils {
                     "Error: HTTP $responseCode"
                 }
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                "Error: ${connection.responseCode} - ${e.message}"
             } finally {
                 connection.disconnect()
             }
@@ -96,7 +96,7 @@ object NetworkUtils {
                     connection.errorStream.use { it.reader().use { reader -> reader.readText() } }
                 }
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                "Error: ${connection.responseCode} - ${e.message}"
             } finally {
                 connection.disconnect()
             }

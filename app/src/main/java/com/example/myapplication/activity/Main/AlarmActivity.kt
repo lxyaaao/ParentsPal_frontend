@@ -460,7 +460,7 @@ suspend fun addAlarm(babyId: Int, alarmTime: String, activityType: String, hour:
         isRecurring = true
     }
 
-    val apiPath = "api/v1/alarms/set/$babyId"
+    val apiPath = "api/alarms/set/$babyId"
 
     val requestBody = JSONObject().apply {
         put("activityType", activityType)
@@ -473,7 +473,7 @@ suspend fun addAlarm(babyId: Int, alarmTime: String, activityType: String, hour:
 }
 
 fun fetchAlarms(sharedPreferences: SharedPreferences, babyId: Int) {
-    val apiString = "api/v1/alarms/get/$babyId"
+    val apiString = "api/alarms/get/$babyId"
     CoroutineScope(Dispatchers.IO).launch {
         val response = sendGetRequest(apiString)
         try {

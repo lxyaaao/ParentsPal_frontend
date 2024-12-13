@@ -38,9 +38,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.api.Baby
-import com.example.myapplication.api.RegisterRequest
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import com.example.myapplication.utils.NetworkUtils.sendPostRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -188,28 +186,32 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
 }
 
 suspend fun registerUser(name: String, phoneNumber: String, password: String, activity: Activity): Boolean {
-    val apiPath = "api/v1/appuser/register"
+    try {
+        val apiPath = "api/appuser/register"
 
-    val requestBody = JSONObject().apply {
-        put("name", name)
-        put("phoneNumber", phoneNumber)
-        put("password", password)
-    }
-
-    val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
-
-    val gson = Gson()
-    val response = gson.fromJson(responseString, RegisterResponse::class.java)
-    println("Parsed response: $response")
-
-    if (response.status) {
-        val babiesList = response.babies ?: emptyList()
-        saveUser(activity, response.parentId, response.parentName, babiesList)
-        return true
-    } else {
-        withContext(Dispatchers.Main) {
-            Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
+        val requestBody = JSONObject().apply {
+            put("name", name)
+            put("phoneNumber", phoneNumber)
+            put("password", password)
         }
+
+        val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+        val gson = Gson()
+        val response = gson.fromJson(responseString, RegisterResponse::class.java)
+        println("Parsed response: $response")
+
+        if (response.status) {
+            val babiesList = response.babies ?: emptyList()
+            saveUser(activity, response.parentId, response.parentName, babiesList)
+            return true
+        } else {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    } catch (e: Exception) {
+        println("Error")
     }
 
     return false

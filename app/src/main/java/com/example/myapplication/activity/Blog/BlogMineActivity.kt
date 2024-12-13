@@ -191,13 +191,17 @@ fun MyShareContent(activity: Activity) {
     var articles: List<Article> by remember { mutableStateOf(emptyList()) }
     val refreshState = sharedPreferences.getBoolean("refreshArticleState", false)
 
-    val apiString = "user-article/$parentId"
+    val apiString = "api/user-article/$parentId"
     LaunchedEffect(refreshState) {
         val response = sendGetRequest(apiString)
         try {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
-            articles = apiResponse.data
+            if (apiResponse.success == false) {
+                articles = emptyList()
+            } else {
+                articles = apiResponse.data
+            }
         } catch (e: Exception) {
             println("Json error: $response")
         }
@@ -207,24 +211,27 @@ fun MyShareContent(activity: Activity) {
         editor.apply()
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        items(articles.reversed()) { blogContent ->
-            BlogContentCard(blogContent, onClick = {
-                val editor = sharedPreferences.edit()
-                editor.putInt("articleId", blogContent.articleId).apply()
-                editor.putBoolean("refreshCommentState", false)
-                editor.apply()
+    if(articles.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(articles.reversed()) { blogContent ->
+                BlogContentCard(blogContent, onClick = {
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("articleId", blogContent.articleId).apply()
+                    editor.putBoolean("refreshCommentState", false)
+                    editor.apply()
 
-                val intent = Intent(activity, MyBlogCheckActivity::class.java)
-                activity.startActivity(intent)
-                activity.finish()
-            })
+                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                })
+            }
         }
     }
+
 }
 
 @Composable

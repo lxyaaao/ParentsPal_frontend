@@ -223,7 +223,7 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
         LaunchedEffect(Unit) {
             if (articleId == 0) {
                 try {
-                    val apiPath = "article"
+                    val apiPath = "api/article"
 
                     val requestBody = JSONObject().apply {
                         put("userId", parentId)
@@ -245,13 +245,15 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
                 activity.startActivity(intent)
                 activity.finish()
             } else {
-                // TODO: need to update put method if backend changes
                 try {
-                    val apiPath = "article/$articleId?title=$title&content=$content"
+                    val apiPath = "/api/article/update/${articleId}"
 
-                    println(apiPath)
+                    val requestBody = JSONObject().apply {
+                        put("title", title)
+                        put("content", content)
+                    }
 
-                    val responseString = sendPutRequest(apiPath, "")
+                    val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
 
                     val gson = Gson()
                     val response = gson.fromJson(responseString, RegisterResponse::class.java)

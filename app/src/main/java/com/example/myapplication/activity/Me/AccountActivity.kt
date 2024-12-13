@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.api.ChangePasswordRequest
 import com.example.myapplication.api.LoginRequest
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.RetrofitClient
@@ -248,19 +247,19 @@ fun checkPassword(phoneNumber: String, oldPassword: String,
 }
 
 fun changePassword(oldPassword: String, newPassword: String): Boolean {
-    val response = RetrofitClient.apiService.changePassword(
-        ChangePasswordRequest(
-            oldPassword = oldPassword,
-            newPassword = newPassword
-        )
-    )
-
-    if (response.isSuccessful) {
-        // 处理成功逻辑
-        val responseBody = response.body()
-        if (responseBody?.status == true) {
-            return true
-        }
-    }
+//    val response = RetrofitClient.apiService.changePassword(
+//        ChangePasswordRequest(
+//            oldPassword = oldPassword,
+//            newPassword = newPassword
+//        )
+//    )
+//
+//    if (response.isSuccessful) {
+//        // 处理成功逻辑
+//        val responseBody = response.body()
+//        if (responseBody?.status == true) {
+//            return true
+//        }
+//    }
     return false
 }

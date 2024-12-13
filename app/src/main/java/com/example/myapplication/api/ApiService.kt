@@ -18,23 +18,13 @@ data class Baby(
 
 // 请求数据类
 data class LoginRequest(val phoneNumber: String, val password: String)
-data class RegisterRequest(val name: String, val phoneNumber: String, val password: String)
-data class ChangePasswordRequest(val oldPassword: String, val newPassword: String)
 
 // 响应数据类
 data class LoginResponse(val message: String, val status: Boolean, val parentId: Int, val parentName: String, val babies: List<Baby>)
-data class ChangePasswordResponse(val message: String, val status: Boolean)
 
 // 定义 API 接口
 interface ApiService {
-    @POST("api/v1/appuser/login")
+    @POST("api/appuser/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
 
-    @POST("api/v1/appuser/register")
-    fun register(@Body request: RegisterRequest): Response<Void>
-
-    @PUT("api/v1/appuser/changePassword")
-    fun changePassword(
-        @Body changePasswordRequest: ChangePasswordRequest
-    ): Response<ChangePasswordResponse>
 }

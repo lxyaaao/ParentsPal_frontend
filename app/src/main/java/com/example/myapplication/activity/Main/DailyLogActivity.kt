@@ -368,7 +368,7 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
 }
 
 fun fetchGrowthTracking(sharedPreferences: SharedPreferences, babyId: Int) {
-    val apiString = "api/v1/babies/$babyId/growth"
+    val apiString = "api/babies/$babyId/growth"
     CoroutineScope(Dispatchers.IO).launch {
         val response = sendGetRequest(apiString)
         try {
@@ -409,7 +409,7 @@ fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) 
 data class CheckIn(val date: String, val height: String, val weight: String)
 
 suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
-    val apiPath = "api/v1/babies/$babyId/growth"
+    val apiPath = "api/babies/$babyId/growth"
 
     val requestBody = JSONObject().apply {
         put("weight", weight)

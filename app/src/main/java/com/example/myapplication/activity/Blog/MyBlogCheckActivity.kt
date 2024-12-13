@@ -95,9 +95,10 @@ private fun MyBlogCheckScreen(activity: Activity) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val articleId: Int = sharedPreferences.getInt("articleId", 0)
     var article: Article? by remember { mutableStateOf(null) }
+    val parentId = sharedPreferences.getInt("parentId", 0)
 
     LaunchedEffect(articleId) {
-        val apiString = "article/$articleId"
+        val apiString = "api/article/$articleId"
         val response = sendGetRequest(apiString)
         try {
             println(response)
@@ -211,8 +212,8 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     var isLiked by remember { mutableStateOf(false) }
                     var isSaved by remember { mutableStateOf(false) }
                     var commentText by remember { mutableStateOf("") }
-                    var opLikes by remember { mutableStateOf(1) }
-                    var opSaves by remember { mutableStateOf(1) }
+                    var opLikes by remember { mutableStateOf("") }
+                    var opSaves by remember { mutableStateOf("") }
 
                     Box(
                         modifier = Modifier
@@ -234,12 +235,14 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                     onClick = {
                                         isLiked = !isLiked
 
-                                        if (!isLiked) {
-                                            opLikes = 2
+                                        if (isLiked) {
+                                            opLikes = "incr"
+                                        } else {
+                                            opLikes = "decr"
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            val apiString = "article/likes/$articleId&$opLikes"
+                                            val apiString = "api/article/$parentId/likes/$articleId&$opLikes"
                                             sendPutRequest(apiString, "")
                                         }
 
@@ -269,12 +272,14 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                     onClick = {
                                         isSaved = !isSaved
 
-                                        if (!isSaved) {
-                                            opSaves = 2
+                                        if (isSaved) {
+                                            opSaves = "incr"
+                                        } else {
+                                            opSaves= "decr"
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            val apiString = "article/saves/$articleId&$opSaves"
+                                            val apiString = "api/article/$parentId/saves/$articleId&$opSaves"
                                             sendPutRequest(apiString, "")
                                         }
                                     },
@@ -312,7 +317,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             IconButton(
                                 onClick = {
                                     if (commentText.isNotBlank()) {
-                                        val apiPath = "comment"
+                                        val apiPath = "api/comment"
 
                                         val requestBody = JSONObject().apply {
                                             put("articleId", articleId)
@@ -374,7 +379,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
             confirmButton = {
                 Button(
                     onClick = {
-                        val apiString = "article/$articleId"
+                        val apiString = "api/article/$articleId"
                         CoroutineScope(Dispatchers.IO).launch {
                             sendDeleteRequest(apiString)
                         }
@@ -404,7 +409,7 @@ fun CommentSection(articleId: Int, activity: Activity) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val refreshState = sharedPreferences.getBoolean("refreshCommentState", false)
 
-    val apiString = "comment-article/$articleId"
+    val apiString = "api/article-comment?articleId=$articleId"
     var comments: List<Comment> by remember { mutableStateOf(emptyList()) }
 
     LaunchedEffect(refreshState) {
@@ -412,7 +417,11 @@ fun CommentSection(articleId: Int, activity: Activity) {
         try {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, CommentResponse::class.java)
-            comments = apiResponse.data
+            if (apiResponse.success == false) {
+                comments = emptyList()
+            } else {
+                comments = apiResponse.data
+            }
         } catch (e: Exception) {
             println("Json error: $response")
         }
@@ -431,13 +440,14 @@ fun CommentSection(articleId: Int, activity: Activity) {
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(modifier = Modifier.fillMaxWidth()
-                .padding(bottom = 60.dp) ) {
+            .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
                 CommentItem(comment = comment, activity)
             }
         }
 
     }
+
 }
 
 @Composable
@@ -483,20 +493,22 @@ fun CommentItem(comment: Comment, activity: Activity) {
         }
 
         var isLiked by remember { mutableStateOf(false) }
-        var opLikes by remember { mutableStateOf(1) }
+        var opLikes by remember { mutableStateOf("") }
 
         Box(modifier = Modifier.height(48.dp)) {
             IconButton(
                 onClick = {
                     isLiked = !isLiked
 
-                    if (!isLiked) {
-                        opLikes = 2
+                    if (isLiked) {
+                        opLikes = "incr"
+                    } else {
+                        opLikes = "decr"
                     }
 
                     // TODO: refresh on time
                     CoroutineScope(Dispatchers.IO).launch {
-                        val apiString = "comment/likes/${comment.commentId}&$opLikes"
+                        val apiString = "api/comment/likes/${comment.commentId}&$opLikes"
                         val response = sendPutRequest(apiString, "")
                         println(response)
                     }
@@ -530,7 +542,7 @@ fun CommentItem(comment: Comment, activity: Activity) {
             text = { Text("您确定要删除此评论吗？") },
             confirmButton = {
                 Button(onClick = {
-                    val apiString = "comment/${comment.commentId}"
+                    val apiString = "api/comment/${comment.commentId}"
                     CoroutineScope(Dispatchers.IO).launch {
                         sendDeleteRequest(apiString)
                     }

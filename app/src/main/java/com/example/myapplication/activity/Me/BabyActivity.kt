@@ -70,7 +70,6 @@ private fun BabyScreen(activity: Activity) {
 
     var name by remember { mutableStateOf(sharedPreferences.getString("babyName", "") ?: "") }
     var babyGender by remember { mutableStateOf(sharedPreferences.getString("babyGender", "") ?: "") }
-    var babyBirth by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
     var babyId by remember { mutableStateOf(sharedPreferences.getInt("babyId", 0)) }
     var date by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
 
@@ -135,12 +134,13 @@ private fun BabyScreen(activity: Activity) {
             val parentId = sharedPreferences.getInt("parentId", 0)
             babyId = sharedPreferences.getInt("babyId", 0)
             name = sharedPreferences.getString("babyName", "") ?: ""
-            babyBirth = sharedPreferences.getString("babyBirthdate", "") ?: ""
             babyGender = sharedPreferences.getString("babyGender", "") ?: ""
 
-            if (babyId == 0 && name != "" && babyBirth != "") {
+            println("$name, $babyGender, $date")
+
+            if (babyId == 0 && name != "" && date != "") {
                 CoroutineScope(Dispatchers.Main).launch {
-                    addBaby(parentId, name, babyGender, babyBirth, activity)
+                    addBaby(parentId, name, babyGender, date, activity)
                 }
             }
 
@@ -238,24 +238,29 @@ fun GenderInputDialog(
 }
 
 suspend fun addBaby(parentId: Int, name: String, babyGender: String, babyBirth: String, activity: Activity) {
-    val apiPath = "api/v1/appuser/$parentId/babies"
+    try {
+        val apiPath = "api/appuser/$parentId/babies"
 
-    val requestBody = JSONObject().apply {
-        put("name", name)
-        put("gender", babyGender)
-        put("birthdate", babyBirth)
-        put("photoUrl", "None")
+        val requestBody = JSONObject().apply {
+            put("name", name)
+            put("gender", babyGender)
+            put("birthdate", babyBirth)
+            put("photoUrl", "None")
+        }
+
+        val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+        val gson = Gson()
+        val response = gson.fromJson(responseString, Baby::class.java)
+        println("Parsed response: $response")
+
+        val sharedPreferences =
+            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putInt("babyId", response.id.toInt())
+        editor.putString("babyBirthdate", babyBirth)
+        editor.apply()
+    } catch (e: Exception) {
+        println("Error")
     }
-
-    val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
-
-    val gson = Gson()
-    val response = gson.fromJson(responseString, Baby::class.java)
-    println("Parsed response: $response")
-
-    val sharedPreferences =
-        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
-    editor.putInt("babyId", response.id.toInt()).apply()
-
 }
