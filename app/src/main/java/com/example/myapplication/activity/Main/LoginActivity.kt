@@ -179,7 +179,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                     }
                 }
             } else {
-                Toast.makeText(activity, "网络错误，请稍后再试", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "电话或密码错误", Toast.LENGTH_SHORT).show()
             }
         }
 

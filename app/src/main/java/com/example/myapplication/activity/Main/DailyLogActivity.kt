@@ -51,6 +51,7 @@ import com.example.myapplication.api.Baby
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.sendDeleteRequest
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -61,12 +62,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class GrowthTracking(
+data class CheckIn(
     val id: Long,
     val height: Double,
     val weight: Double,
     val measurementDate: String,
-    val baby: Baby
+    val baby: Baby?
 )
 
 class DailyLogActivity : AppCompatActivity() {
@@ -91,7 +92,6 @@ private fun DailyLogScreen(activity: Activity) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val babyId: Int = sharedPreferences.getInt("babyId", 0)
     var checkIns by remember { mutableStateOf(loadCheckIns(sharedPreferences)) }
-
 
     Scaffold(
         topBar = {
@@ -137,7 +137,7 @@ private fun DailyLogScreen(activity: Activity) {
                         .padding(16.dp)
                 ) {
                     items(checkIns.reversed()) { checkIn ->
-                        CheckInCard(checkIn) {
+                        CheckInCard(babyId, checkIn) {
                             // 删除打卡记录
                             checkIns = checkIns.filter { it != checkIn }
                             saveCheckIns(sharedPreferences, checkIns) // 更新存储
@@ -158,7 +158,7 @@ private fun DailyLogScreen(activity: Activity) {
         AddCheckInDialog(activity,
             onDismiss = { addClick = false },
             onAdd = { date, height, weight ->
-                val newCheckIn = CheckIn(date, height, weight)
+                val newCheckIn = CheckIn(0, height.toDouble(), weight.toDouble(), date, null)
                 checkIns = checkIns + newCheckIn // 添加新记录
                 saveCheckIns(sharedPreferences, checkIns) // 更新存储
                 fetchGrowthTracking(sharedPreferences, babyId)
@@ -320,7 +320,7 @@ fun AddCheckInDialog(activity: Activity, onDismiss: () -> Unit, onAdd: (String, 
 
 
 @Composable
-fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
+fun CheckInCard(babyId: Int, checkIn: CheckIn, onDelete: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
 
     Column(
@@ -334,7 +334,7 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = checkIn.date)
+            Text(text = checkIn.measurementDate)
             IconButton(onClick = { showDialog = true }) {
                 Icon(Icons.Default.Delete, contentDescription = "删除打卡记录")
             }
@@ -352,6 +352,13 @@ fun CheckInCard(checkIn: CheckIn, onDelete: () -> Unit) {
                 TextButton(
                     onClick = {
                         onDelete()
+
+                        println(checkIn.id)
+                        val apiString = "api/babies/$babyId/growth/${checkIn.id}"
+                        CoroutineScope(Dispatchers.IO).launch {
+                            sendDeleteRequest(apiString)
+                        }
+
                         showDialog = false
                     }
                 ) {
@@ -374,19 +381,10 @@ fun fetchGrowthTracking(sharedPreferences: SharedPreferences, babyId: Int) {
         try {
             val gson = Gson()
 
-            val growthTrackingList: List<GrowthTracking> =
-                gson.fromJson(response, Array<GrowthTracking>::class.java).toList()
+            val growthTrackingList: List<CheckIn> =
+                gson.fromJson(response, Array<CheckIn>::class.java).toList()
 
-            val newCheckIns =
-                growthTrackingList.map { tracking ->
-                    CheckIn(
-                        date = tracking.measurementDate.toString(),
-                        height = tracking.height.toString(),
-                        weight = tracking.weight.toString()
-                    )
-                }
-
-            saveCheckIns(sharedPreferences, newCheckIns.toList())
+            saveCheckIns(sharedPreferences, growthTrackingList)
 
         } catch (e: Exception) {
             println("Json error: $response")
@@ -405,8 +403,6 @@ fun saveCheckIns(sharedPreferences: SharedPreferences, checkIns: List<CheckIn>) 
     val json = Gson().toJson(checkIns)
     editor.putString("checkins", json).apply()
 }
-
-data class CheckIn(val date: String, val height: String, val weight: String)
 
 suspend fun addCheckin(babyId: Int, date: String, height: String, weight: String) {
     val apiPath = "api/babies/$babyId/growth"

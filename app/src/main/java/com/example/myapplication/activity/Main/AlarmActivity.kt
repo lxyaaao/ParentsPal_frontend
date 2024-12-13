@@ -51,6 +51,7 @@ import com.example.myapplication.activity.Me.ButtonWithTwoTexts
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.sendDeleteRequest
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -426,6 +427,13 @@ fun AlarmCard(alarm: Alarm, onDelete: () -> Unit) {
                 TextButton(
                     onClick = {
                         onDelete()
+
+                        println(alarm.id)
+                        val apiString = "api/alarms/delete/${alarm.id}"
+                        CoroutineScope(Dispatchers.IO).launch {
+                            sendDeleteRequest(apiString)
+                        }
+
                         showDialog = false
                     }
                 ) {

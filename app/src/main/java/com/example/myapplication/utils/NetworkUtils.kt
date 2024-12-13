@@ -162,3 +162,26 @@ suspend fun sendPutRequest(apiString: String, requestBody: String): String {
         }
     }
 }
+
+suspend fun sendPatchRequest(apiString: String, requestBody: String): String {
+    return withContext(Dispatchers.IO) {
+        val urlString = "http://parentspal.natapp1.cc/"
+        val url = URL(urlString + apiString)
+
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "PATCH"
+        connection.doOutput = true
+        connection.setRequestProperty("Content-Type", "application/json")
+
+        try {
+            connection.outputStream.use { outputStream ->
+                outputStream.write(requestBody.toByteArray(Charsets.UTF_8))
+            }
+            connection.inputStream.use { it.reader().use { reader -> reader.readText() } }
+        } catch (e: Exception) {
+            "Error: ${connection.responseCode} - ${e.message}"
+        } finally {
+            connection.disconnect()
+        }
+    }
+}

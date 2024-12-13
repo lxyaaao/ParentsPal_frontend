@@ -38,10 +38,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.myapplication.activity.Main.Alarm
+import com.example.myapplication.activity.Main.AlarmResponse
+import com.example.myapplication.activity.Main.saveAlarms
 import com.example.myapplication.api.LoginRequest
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.example.myapplication.utils.sendPatchRequest
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -212,6 +222,10 @@ fun PasswordChangeDialog(phoneNumber: String, activity: Activity, onDismiss: () 
 fun checkPassword(phoneNumber: String, oldPassword: String,
                   newPassword: String, confirmPassword: String,
                   activity: Activity, callback: (Boolean) -> Unit) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
     val request = LoginRequest(phoneNumber = phoneNumber, password = oldPassword)
 
     RetrofitClient.apiService.login(request).enqueue(object : Callback<LoginResponse> {
@@ -221,8 +235,7 @@ fun checkPassword(phoneNumber: String, oldPassword: String,
                 if (loginResponse != null) {
                     if (loginResponse.status) {
                         if (newPassword == confirmPassword) {
-                            // TODO: post changePassword message to backend
-                            // changePassword(oldPassword, newPassword)
+                            changePassword(parentId, oldPassword, newPassword)
                             callback(true)
                         } else {
                             Toast.makeText(activity, "新密码和确认密码不匹配", Toast.LENGTH_SHORT).show()
@@ -234,7 +247,7 @@ fun checkPassword(phoneNumber: String, oldPassword: String,
                     }
                 }
             } else {
-                Toast.makeText(activity, "网络错误，请稍后再试", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "密码错误", Toast.LENGTH_SHORT).show()
                 callback(false)
             }
         }
@@ -246,20 +259,20 @@ fun checkPassword(phoneNumber: String, oldPassword: String,
     })
 }
 
-fun changePassword(oldPassword: String, newPassword: String): Boolean {
-//    val response = RetrofitClient.apiService.changePassword(
-//        ChangePasswordRequest(
-//            oldPassword = oldPassword,
-//            newPassword = newPassword
-//        )
-//    )
-//
-//    if (response.isSuccessful) {
-//        // 处理成功逻辑
-//        val responseBody = response.body()
-//        if (responseBody?.status == true) {
-//            return true
-//        }
-//    }
+fun changePassword(parentId: Int, oldPassword: String, newPassword: String): Boolean {
+    val apiString = "api/appuser/${parentId}/change-password"
+    CoroutineScope(Dispatchers.IO).launch {
+        val requestBody = JSONObject().apply {
+            put("oldPassword", oldPassword)
+            put("newPassword", newPassword)
+        }
+
+        val response = sendPatchRequest(apiString, requestBody.toString())
+        try {
+            println(response)
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+    }
     return false
 }
