@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -71,6 +73,8 @@
         <activity
             android:name=".activity.AIQA.QAActivity"
             android:exported="false" />
+        <activity android:name=".activity.AIQA.AIHistoryActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.Blog.BlogActivity"
             android:exported="false"
@@ -101,6 +105,13 @@
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             <!-- </intent-filter> -->
         </activity>
+        <service
+            android:name=".service.MyFirebaseInstanceIDService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
+            </intent-filter>
+        </service>
 
         <service
             android:name=".service.MyFirebaseMessagingService"
