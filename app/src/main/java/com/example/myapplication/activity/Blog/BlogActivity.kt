@@ -1,7 +1,9 @@
 package com.example.myapplication.activity.Blog
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Recommend
@@ -43,6 +46,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -68,6 +72,8 @@ import com.example.myapplication.activity.Main.NavItem
 import com.example.myapplication.activity.Main.PersonScreen
 import com.example.myapplication.activity.Main.QuestionAnswerScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.google.gson.Gson
 
 class BlogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,7 +131,6 @@ private fun BlogScreen(activity: Activity) {
             modifier = Modifier
                 .padding(paddingValues)
                 .pointerInput(Unit) {
-                    // 监听点击事件
                     detectTapGestures(onTap = {
                         isMenuExpanded = false
                     })
@@ -134,7 +139,7 @@ private fun BlogScreen(activity: Activity) {
             paddingValuesIn ->
             Column(modifier = Modifier.padding(paddingValuesIn)) {
                 when (selectedTabIndex) {
-                    0 -> TabContent1()
+                    0 -> TabContent1(activity)
                     1 -> TabContent2()
                 }
             }
@@ -142,24 +147,72 @@ private fun BlogScreen(activity: Activity) {
                 SideRail(activity, isMenuExpanded)
             }
         }
-
-
     }
 }
 
 
 @Composable
-fun TabContent1() {
+fun TabContent1(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
+    var articles: List<Article> by remember { mutableStateOf(emptyList()) }
+    val selectedItem = sharedPreferences.getInt("selectedItem", 0)
+    val parentId = sharedPreferences.getInt("parentId", 0)
 
-//    ShareContent(shareContents)
+    FetchLikedArticles(activity)
+    FetchLikedComments(activity)
+
+    var apiString = ""
+
+    if (selectedItem == 0) {
+        apiString = "api/article/hot"
+    }
+    if (selectedItem == 1) {
+        apiString = "api/saved-article/$parentId"
+    }
+
+    LaunchedEffect(Unit) {
+        val response = sendGetRequest(apiString)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
+            articles = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+    }
+
+    if(articles.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(articles) { blogContent ->
+                BlogContentCard(blogContent, onClick = {
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("articleId", blogContent.articleId)
+                    editor.putBoolean("refreshCommentState", false)
+                    editor.putString("blogPage", "blog")
+                    editor.apply()
+
+                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                })
+            }
+        }
+    }
 }
 
 @Composable
 fun TabContent2() {
 
-
-//    AskContent(askContents)
 }
 
 private fun BlogMainScreen(activity: Activity) {
@@ -208,24 +261,51 @@ private fun CenterAlignedTopAppBarExample(
 
 @Composable
 fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
-    var selectedItem by remember { mutableStateOf(0) }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    var selectedItem by remember { mutableStateOf(sharedPreferences.getInt("selectedItem", 0)) }
 
     if (isMenuExpanded) {
         NavigationRail(
             containerColor = Color.White
         ) {
-            // NavigationRailItem 1
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Recommend, contentDescription = "推荐") },
                 label = { Text("推荐") },
                 selected = selectedItem == 0,
                 onClick = {
                     selectedItem = 0
-                    // 处理点击事件
+
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("selectedItem", selectedItem)
+                    editor.apply()
+
+                    val intent = Intent(activity, BlogActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
                 }
             )
             Spacer(modifier = Modifier.height(8.dp))
-            // NavigationRailItem 2
+
+            NavigationRailItem(
+                icon = { Icon(Icons.Filled.Bookmark, contentDescription = "收藏") },
+                label = { Text("收藏") },
+                selected = selectedItem == 1,
+                onClick = {
+                    selectedItem = 1
+
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("selectedItem", selectedItem)
+                    editor.apply()
+
+                    val intent = Intent(activity, BlogActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Person, contentDescription = "我的") },
                 label = { Text("我的") },
@@ -238,32 +318,6 @@ fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
                     activity.finish()
                 }
             )
-        }
-    }
-}
-
-@Composable
-fun ShareContent(shareContents: List<Article>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        items(shareContents.reversed()) { blogContent ->
-            BlogContentCard(blogContent, onClick = { })
-        }
-    }
-}
-
-@Composable
-fun AskContent(askContents: List<Article>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        items(askContents.reversed()) { blogContent ->
-            BlogContentCard(blogContent, onClick = { })
         }
     }
 }
@@ -326,6 +380,90 @@ fun BlogContentCard(article: Article, onClick: () -> Unit) {
     }
 }
 
+@Composable
+fun FetchLikedArticles(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
+    var likedArticles: List<Article> by remember { mutableStateOf(emptyList()) }
+    var savedArticles: List<Article> by remember { mutableStateOf(emptyList()) }
+    var likedArticleIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
+    var savedArticleIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
+
+    val apiLike = "api/liked-article/$parentId"
+    val apiSave = "api/saved-article/$parentId"
+    LaunchedEffect(Unit) {
+        val responseLike = sendGetRequest(apiLike)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(responseLike, GetArticleResponse::class.java)
+            println(apiResponse)
+            likedArticles = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+            likedArticleIds = likedArticles.map { it.articleId }.toHashSet()
+        } catch (e: Exception) {
+            println("Json error: $responseLike")
+        }
+
+        val responseSave = sendGetRequest(apiSave)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(responseSave, GetArticleResponse::class.java)
+            savedArticles = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+            savedArticleIds = savedArticles.map { it.articleId }.toHashSet()
+        } catch (e: Exception) {
+            println("Json error: $responseSave")
+        }
+    }
+
+    val editor = sharedPreferences.edit()
+    editor.putStringSet("likedArticleIds", likedArticleIds.map { it.toString() }.toSet())
+    editor.putStringSet("savedArticleIds", savedArticleIds.map { it.toString() }.toSet())
+    editor.apply()
+}
+
+@Composable
+fun FetchLikedComments(activity: Activity,) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
+    var likedComments: List<Comment> by remember { mutableStateOf(emptyList()) }
+    var likedCommentIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
+
+    val apiLike = "api/liked-comment?userId=$parentId"
+    LaunchedEffect(Unit) {
+        val responseLike = sendGetRequest(apiLike)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(responseLike, CommentResponse::class.java)
+            println(apiResponse)
+            likedComments = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+            likedCommentIds = likedComments.map { it.commentId }.toHashSet()
+        } catch (e: Exception) {
+            println("Json error: $responseLike")
+        }
+    }
+
+    val editor = sharedPreferences.edit()
+    editor.putStringSet("likedCommentIds", likedCommentIds.map { it.toString() }.toSet())
+    editor.apply()
+}
+
 data class GetArticleResponse(
     val data: List<Article>,
     val success: Boolean,
@@ -338,7 +476,7 @@ data class Article(
     val username: String,
     val title: String,
     val content: String,
-    val likes: Int,
+    var likes: Int,
     val saves: Int,
     val time: String
 )

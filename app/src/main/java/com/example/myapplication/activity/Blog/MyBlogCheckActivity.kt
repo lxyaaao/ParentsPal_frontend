@@ -45,6 +45,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -94,8 +95,17 @@ private fun MyBlogCheckScreen(activity: Activity) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val articleId: Int = sharedPreferences.getInt("articleId", 0)
-    var article: Article? by remember { mutableStateOf(null) }
     val parentId = sharedPreferences.getInt("parentId", 0)
+
+    var article: Article? by remember { mutableStateOf(null) }
+    var likes by remember { mutableIntStateOf(0) }
+    var saves by remember { mutableIntStateOf(0) }
+    var articleUserId  by remember { mutableIntStateOf(0) }
+
+    val likedArticleIds = sharedPreferences.getStringSet("likedArticleIds", emptySet())
+        ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
+    val savedArticleIds = sharedPreferences.getStringSet("savedArticleIds", emptySet())
+        ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
 
     LaunchedEffect(articleId) {
         val apiString = "api/article/$articleId"
@@ -105,6 +115,9 @@ private fun MyBlogCheckScreen(activity: Activity) {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, CheckArticleResponse::class.java)
             article = apiResponse.data
+            likes = apiResponse.data.likes
+            saves = apiResponse.data.saves
+            articleUserId = apiResponse.data.userId
         } catch (e: Exception) {
             println("Json error: $response")
         }
@@ -133,11 +146,13 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { editClick = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "修改"
-                        )
+                    if (articleUserId == parentId) {
+                        IconButton(onClick = { editClick = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = "修改"
+                            )
+                        }
                     }
                 }
             )
@@ -174,12 +189,15 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    IconButton(onClick = { deleteClick = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete"
-                        )
+                    if (articleUserId == parentId) {
+                        IconButton(onClick = { deleteClick = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete"
+                            )
+                        }
                     }
+
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -208,9 +226,8 @@ private fun MyBlogCheckScreen(activity: Activity) {
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Box {
-                    // TODO: Get if the article has been liked or saved
-                    var isLiked by remember { mutableStateOf(false) }
-                    var isSaved by remember { mutableStateOf(false) }
+                    var isLiked by remember { mutableStateOf(likedArticleIds.contains(articleId)) }
+                    var isSaved by remember { mutableStateOf(savedArticleIds.contains(articleId)) }
                     var commentText by remember { mutableStateOf("") }
                     var opLikes by remember { mutableStateOf("") }
                     var opSaves by remember { mutableStateOf("") }
@@ -224,7 +241,6 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     }
 
                     Box(modifier = Modifier.fillMaxSize()) {
-                        // TODO: refresh on time
                         Row(
                             modifier = Modifier
                                 .align(Alignment.BottomStart),
@@ -235,10 +251,10 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                     onClick = {
                                         isLiked = !isLiked
 
-                                        if (isLiked) {
-                                            opLikes = "incr"
+                                        opLikes = if (isLiked) {
+                                            "incr"
                                         } else {
-                                            opLikes = "decr"
+                                            "decr"
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
@@ -246,6 +262,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                             sendPutRequest(apiString, "")
                                         }
 
+                                        likes = if (isLiked) (likes + 1) else (likes - 1)
                                     },
                                     modifier = Modifier.size(32.dp)
                                         .align(Alignment.TopCenter)
@@ -258,7 +275,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 }
 
                                 Text(
-                                    text = article?.likes.toString(),
+                                    text = likes.toString(),
                                     color = Color.Gray,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier
@@ -272,16 +289,19 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                     onClick = {
                                         isSaved = !isSaved
 
-                                        if (isSaved) {
-                                            opSaves = "incr"
+                                        opSaves = if (isSaved) {
+                                            "incr"
                                         } else {
-                                            opSaves= "decr"
+                                            "decr"
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
                                             val apiString = "api/article/$parentId/saves/$articleId&$opSaves"
                                             sendPutRequest(apiString, "")
                                         }
+
+                                        saves = if (isSaved) (saves + 1) else (saves - 1)
+
                                     },
                                     modifier = Modifier.size(32.dp)
                                         .align(Alignment.TopCenter)
@@ -294,7 +314,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 }
 
                                 Text(
-                                    text = article?.saves.toString(),
+                                    text = saves.toString(),
                                     color = Color.Gray,
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier
@@ -321,7 +341,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
                                         val requestBody = JSONObject().apply {
                                             put("articleId", articleId)
-                                            article?.let { put("userId", it.userId) }
+                                            put("userId", parentId)
                                             put("content", commentText)
                                         }
                                         println(requestBody)
@@ -360,9 +380,26 @@ private fun MyBlogCheckScreen(activity: Activity) {
     )
 
     if (backFlag) {
-        val intent = Intent(activity, BlogMineActivity::class.java)
-        activity.startActivity(intent)
-        activity.finish()
+        val page = sharedPreferences.getString("blogPage", "")
+
+        if (page == "mine") {
+            val intent = Intent(activity, BlogMineActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
+        }
+
+        if (page == "search") {
+            val intent = Intent(activity, SearchResultActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
+        }
+
+        if (page == "blog") {
+            val intent = Intent(activity, BlogActivity::class.java)
+            activity.startActivity(intent)
+            activity.finish()
+        }
+
     }
 
     if (editClick) {
@@ -417,10 +454,10 @@ fun CommentSection(articleId: Int, activity: Activity) {
         try {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, CommentResponse::class.java)
-            if (apiResponse.success == false) {
-                comments = emptyList()
+            comments = if (!apiResponse.success) {
+                emptyList()
             } else {
-                comments = apiResponse.data
+                apiResponse.data
             }
         } catch (e: Exception) {
             println("Json error: $response")
@@ -458,6 +495,9 @@ fun CommentItem(comment: Comment, activity: Activity) {
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    val likedCommentIds = sharedPreferences.getStringSet("likedCommentIds", emptySet())
+        ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
+
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -492,26 +532,30 @@ fun CommentItem(comment: Comment, activity: Activity) {
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        var isLiked by remember { mutableStateOf(false) }
+        println("list:$likedCommentIds, id:${comment.commentId}")
+
+        var isLiked by remember { mutableStateOf(likedCommentIds.contains(comment.commentId)) }
         var opLikes by remember { mutableStateOf("") }
+        var likes by remember { mutableIntStateOf(comment.likes) }
 
         Box(modifier = Modifier.height(48.dp)) {
             IconButton(
                 onClick = {
                     isLiked = !isLiked
 
-                    if (isLiked) {
-                        opLikes = "incr"
+                    opLikes = if (isLiked) {
+                        "incr"
                     } else {
-                        opLikes = "decr"
+                        "decr"
                     }
 
-                    // TODO: refresh on time
                     CoroutineScope(Dispatchers.IO).launch {
-                        val apiString = "api/comment/likes/${comment.commentId}&$opLikes"
+                        val apiString = "api/comment/$parentId/likes/${comment.commentId}&$opLikes"
                         val response = sendPutRequest(apiString, "")
                         println(response)
                     }
+
+                    likes = if (isLiked) (likes + 1) else (likes - 1)
                 },
                 modifier = Modifier.size(24.dp)
             ) {
@@ -524,7 +568,7 @@ fun CommentItem(comment: Comment, activity: Activity) {
             }
 
             Text(
-                text = comment.likes.toString(),
+                text = likes.toString(),
                 color = Color.Gray,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier

@@ -9,7 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -23,13 +26,20 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.example.myapplication.activity.Main.RegisterResponse
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.gson.Gson
+import org.json.JSONObject
 
 class SearchResultActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,8 +62,11 @@ fun SearchResultScreen(activity: Activity) {
 
     var backFlag by remember { mutableStateOf(false) }
 
-    var title by remember { mutableStateOf(sharedPreferences.getString("searchResult", " ") ?: " ") }
+    val title by remember { mutableStateOf(sharedPreferences.getString("searchResult", " ") ?: " ") }
     var selectedTabIndex by remember { mutableStateOf(0) }
+
+    FetchLikedArticles(activity)
+    FetchLikedComments(activity)
 
     Scaffold(
         topBar = {
@@ -79,9 +92,8 @@ fun SearchResultScreen(activity: Activity) {
                 }
             )
         },
-        content = { Paddingvalues ->
-            Column(modifier = Modifier.padding(Paddingvalues)) {
-                // TabRow
+        content = { paddingValues ->
+            Column(modifier = Modifier.padding(paddingValues)) {
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
                     containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -91,17 +103,16 @@ fun SearchResultScreen(activity: Activity) {
                         Tab(
                             selected = selectedTabIndex == index,
                             onClick = {
-                                selectedTabIndex = index // 处理点击事件，例如切换内容
+                                selectedTabIndex = index
                             },
                             text = { Text(title) }
                         )
                     }
                 }
 
-                // 根据选中的 Tab 显示不同的内容
                 when (selectedTabIndex) {
-                    0 -> TabResultContent1() // 显示第一个 Tab 的内容
-                    1 -> TabResultContent2() // 显示第二个 Tab 的内容
+                    0 -> TabResultContent1(title, activity)
+                    1 -> TabResultContent2()
                 }
             }
         }
@@ -118,11 +129,52 @@ fun SearchResultScreen(activity: Activity) {
 }
 
 @Composable
-fun TabResultContent2() {
+fun TabResultContent1(title: String, activity: Activity) {
+    var articles: List<Article> by remember { mutableStateOf(emptyList()) }
 
+    val apiPath = "api/article/search?queryKeyword=$title"
+    LaunchedEffect(Unit) {
+        val response = sendGetRequest(apiPath)
+        println("api=$apiPath, response=$response")
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
+            articles = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+    }
+
+    if(articles.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(articles) { blogContent ->
+                BlogContentCard(blogContent, onClick = {
+                    val sharedPreferences: SharedPreferences =
+                        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("articleId", blogContent.articleId)
+                    editor.putBoolean("refreshCommentState", false)
+                    editor.putString("blogPage", "search")
+                    editor.apply()
+
+                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                })
+            }
+        }
+    }
 }
 
 @Composable
-fun TabResultContent1() {
+fun TabResultContent2() {
 
 }

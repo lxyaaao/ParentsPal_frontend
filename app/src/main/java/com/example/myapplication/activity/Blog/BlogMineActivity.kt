@@ -191,16 +191,19 @@ fun MyShareContent(activity: Activity) {
     var articles: List<Article> by remember { mutableStateOf(emptyList()) }
     val refreshState = sharedPreferences.getBoolean("refreshArticleState", false)
 
+    FetchLikedArticles(activity)
+    FetchLikedComments(activity)
+
     val apiString = "api/user-article/$parentId"
     LaunchedEffect(refreshState) {
         val response = sendGetRequest(apiString)
         try {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
-            if (apiResponse.success == false) {
-                articles = emptyList()
+            articles = if (!apiResponse.success) {
+                emptyList()
             } else {
-                articles = apiResponse.data
+                apiResponse.data
             }
         } catch (e: Exception) {
             println("Json error: $response")
@@ -220,8 +223,9 @@ fun MyShareContent(activity: Activity) {
             items(articles.reversed()) { blogContent ->
                 BlogContentCard(blogContent, onClick = {
                     val editor = sharedPreferences.edit()
-                    editor.putInt("articleId", blogContent.articleId).apply()
+                    editor.putInt("articleId", blogContent.articleId)
                     editor.putBoolean("refreshCommentState", false)
+                    editor.putString("blogPage", "mine")
                     editor.apply()
 
                     val intent = Intent(activity, MyBlogCheckActivity::class.java)
