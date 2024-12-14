@@ -103,6 +103,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
     var likes by remember { mutableIntStateOf(0) }
     var saves by remember { mutableIntStateOf(0) }
     var articleUserId  by remember { mutableIntStateOf(0) }
+    var articleUserName by remember { mutableStateOf("") }
 
     val likedArticleIds = sharedPreferences.getStringSet("likedArticleIds", emptySet())
         ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
@@ -120,6 +121,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
             likes = apiResponse.data.likes
             saves = apiResponse.data.saves
             articleUserId = apiResponse.data.userId
+            articleUserName = apiResponse.data.username
         } catch (e: Exception) {
             println("Json error: $response")
         }
@@ -186,7 +188,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
                                 intent.putExtra("type", "user")
-                                intent.putExtra("username", user.username) // TODO
+                                intent.putExtra("username", articleUserName) // TODO
                                 activity.startActivity(intent)
                                 activity.finish()
                             },
@@ -203,7 +205,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
                                 intent.putExtra("type", "user")
-                                intent.putExtra("username", user.username) // TODO
+                                intent.putExtra("username", articleUserName) // TODO
                                 activity.startActivity(intent)
                                 activity.finish()
                             }
