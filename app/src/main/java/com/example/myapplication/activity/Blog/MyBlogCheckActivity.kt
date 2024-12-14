@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
+import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
@@ -179,13 +181,29 @@ private fun MyBlogCheckScreen(activity: Activity) {
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .padding(4.dp),
+                            .padding(4.dp)
+                            .clickable {
+                                // TODO: Add conversation name
+                                val intent = Intent(activity, QAActivity::class.java)
+                                activity.startActivity(intent)
+                                activity.finish()
+                            },
                         contentScale = ContentScale.Crop
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    article?.let { Text(text = it.username, style = TextStyle(fontSize = 16.sp)) }
+                    article?.let {
+                        Text(
+                            text = it.username,
+                            style = TextStyle(fontSize = 16.sp),
+                            modifier = Modifier.clickable {
+                                // TODO: Add conversation name
+                                val intent = Intent(activity, QAActivity::class.java)
+                                activity.startActivity(intent)
+                                activity.finish()
+                            }
+                        ) }
 
                     Spacer(modifier = Modifier.weight(1f))
 

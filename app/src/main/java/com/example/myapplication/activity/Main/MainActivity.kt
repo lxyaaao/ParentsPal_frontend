@@ -252,6 +252,12 @@ fun HomeScreen(activity: Activity) {
 
 @Composable
 fun ShareScreen(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
+    editor.putInt("selectedItem", 0)
+    editor.apply()
+
     val intent = Intent(activity, BlogActivity::class.java)
     activity.startActivity(intent)
     activity.overridePendingTransition(0, 0)
