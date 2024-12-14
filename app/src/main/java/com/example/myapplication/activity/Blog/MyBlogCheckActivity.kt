@@ -185,6 +185,8 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             .clickable {
                                 // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
+                                intent.putExtra("type", "user")
+                                intent.putExtra("username", user.username) // TODO
                                 activity.startActivity(intent)
                                 activity.finish()
                             },
@@ -200,6 +202,8 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             modifier = Modifier.clickable {
                                 // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
+                                intent.putExtra("type", "user")
+                                intent.putExtra("username", user.username) // TODO
                                 activity.startActivity(intent)
                                 activity.finish()
                             }
