@@ -19,6 +19,8 @@ material3AdaptiveNavigationSuite = "1.4.0-alpha01"
 materialIconsCore = "1.7.3"
 activity = "1.9.2"
 compiler = "3.2.0-alpha11"
+firebaseAnalytics = "22.1.2"
+firebaseMessaging = "24.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +49,8 @@ androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifec
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-compiler = { group = "androidx.databinding", name = "compiler", version.ref = "compiler" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -124,7 +124,13 @@ private fun QAScreen(activity: Activity) {
                     BackToMainButton(activity)
                 },
                 actions = {
-                    IconButton(onClick = { /* do something */ }) {
+                    IconButton(onClick = {
+                        val intent = Intent(activity, AIHistoryActivity::class.java)
+                        activity.startActivity(intent)
+                        activity.overridePendingTransition(0, 0)
+                        activity.finish()
+
+                    }) {
                         Icon(
                             imageVector = Icons.Filled.Menu,
                             contentDescription = "Localized description"
@@ -232,13 +238,24 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
     val conversationItems = mutableListOf<ConversationItem>()
     val jsonObject = JSONObject(jsonResponse)
     val dataArray: JSONArray = jsonObject.getJSONArray("data")
-
-    for (i in 0 until dataArray.length()) {
-        val messageObject = dataArray.getJSONObject(i)
-        val senderName = messageObject.getString("sender_name")
-        val content = messageObject.getString("content")
-        val createdAt = messageObject.getString("created_at")
-        conversationItems.add(ConversationItem(senderName, content, createdAt))
+    if(isUserConversation()){
+        for (i in 0 until dataArray.length()) {
+            val messageObject = dataArray.getJSONObject(i)
+            val senderName = messageObject.getString("sender_name")
+            val content = messageObject.getString("content")
+            val createdAt = messageObject.getString("created_at")
+            conversationItems.add(ConversationItem(senderName, content, createdAt))
+        }
+    }
+    else{
+        for (i in 0 until dataArray.length()) {
+            val messageObject = dataArray.getJSONObject(i)
+            val senderName = "Bot"
+            val content = messageObject.getString("answer")
+            val createdAt = messageObject.getString("created_at")
+            conversationItems.add(ConversationItem(senderName, content, createdAt))
+            conversationItems.add(ConversationItem("User", messageObject.getString("query"), createdAt))
+        }
     }
 
     return conversationItems.reversed()
@@ -247,9 +264,9 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
 suspend fun loadConversationHistory(username1: String, username2: String): List<ConversationItem> {
     return withContext(Dispatchers.IO) {
         val apiString =
-            "api/conversations/messages-between-users?username1=$username1&username2=$username2"
+            if(isUserConversation()) "api/conversations/messages-between-users?username1=$username1&username2=$username2" else "api/ai_conversations/get-message?convid=$username2"
         val response = NetworkUtils.sendGetRequest(apiString)
-        Log.d("response", response)
+//        Log.d("response", response)
         try {
             parseConversationHistory(response)
         } catch (e: JSONException) {
@@ -278,6 +295,10 @@ private fun ConversationScreen(activity: Activity) {
                 conversations.value = history
                 delay(1000)
             }
+        }
+        else if(ConversationInfo.userName != null){
+            val history = loadConversationHistory(myName, ConversationInfo.userName!!)
+            conversations.value = history
         }
     }
 
@@ -357,15 +378,15 @@ private fun ConversationScreen(activity: Activity) {
 
                             } else {
                                 val response =
-                                    sendAIRequest(currentText.value, conversationId.value)
+                                    sendAIRequest(myName, currentText.value, conversationId.value)
                                 Log.d("response", response)
                                 val jsonResponse = try {
-                                    JSONObject(response)
+                                    JSONObject(response).getJSONObject("data")
                                 } catch (e: Exception) {
                                     e.printStackTrace()
                                     JSONObject()
                                 }
-                                conversationId.value = jsonResponse.optString("conversation_id", "")
+                                conversationId.value = jsonResponse.optString("conv_id", "")
                                 val responseText = jsonResponse.optString("answer", "")
                                 // Handle the response here
                                 conversations.value = conversations.value.dropLast(1) + ConversationItem(

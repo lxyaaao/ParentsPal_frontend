@@ -60,6 +60,8 @@ dependencies {
 }
 
 dependencies {
+    implementation(libs.firebase.analytics)
+
     implementation(libs.androidx.compiler)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)

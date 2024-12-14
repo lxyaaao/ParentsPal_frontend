@@ -63,23 +63,21 @@ object NetworkUtils {
 
 
 
-    suspend fun sendAIRequest(message: String, conversation: String = ""): String {
+    suspend fun sendAIRequest(myName: String, message: String, conversation: String = ""): String {
         return withContext(Dispatchers.IO) {
-            val url = URL("http://parentspal.natapp1.cc/v1/chat-messages")
+            val url = URL("http://parentspal.natapp1.cc/api/ai_conversations/message")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.setRequestProperty("Authorization", "Bearer app-2Z15tg459MeUA12SSjKuoyYt")
             connection.setRequestProperty("Content-Type", "application/json; utf-8")
             connection.setRequestProperty("Accept", "application/json")
             connection.doOutput = true
-
             val jsonInputString = """
                 {
-                    "inputs": {},
-                    "query": "$message",
-                    "response_mode": "blocking",
-                    "conversation_id": "$conversation",
-                    "user": "随便写一个"
+                    "username":"$myName",
+                    "conversationId":"",
+                    "query":"$message",
+                    "mode":"blocking"
                 }
             """.trimIndent()
 
