@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,9 +101,21 @@ fun isUserConversation(): Boolean {
     return ConversationInfo.conversationType == "user" && ConversationInfo.userName != null
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QAScreen(activity: Activity) {
+
+    val showToast = remember { mutableStateOf(false) }
+
+    // 如果 showToast 为 true，则显示 Toast
+    if (showToast.value) {
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            Toast.makeText(context, "别点了，这里什么也没有", Toast.LENGTH_LONG).show()
+            showToast.value = false // 发送完 Toast 后重置状态
+        }
+    }
 //    val navController = rememberNavController()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Scaffold(
@@ -115,7 +130,7 @@ private fun QAScreen(activity: Activity) {
                 ),
                 title = {
                     Text(
-                        if (isUserConversation()) ConversationInfo.userName!! else "AI",
+                        if (isUserConversation()) ConversationInfo.userName!! else "大模型对话",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -125,10 +140,14 @@ private fun QAScreen(activity: Activity) {
                 },
                 actions = {
                     IconButton(onClick = {
-                        val intent = Intent(activity, AIHistoryActivity::class.java)
-                        activity.startActivity(intent)
-                        activity.overridePendingTransition(0, 0)
-                        activity.finish()
+                        if (isUserConversation()) {
+                            showToast.value = true
+                        } else {
+                            val intent = Intent(activity, AIHistoryActivity::class.java)
+                            activity.startActivity(intent)
+                            activity.overridePendingTransition(0, 0)
+                            activity.finish()
+                        }
 
                     }) {
                         Icon(
@@ -326,8 +345,12 @@ private fun ConversationScreen(activity: Activity) {
             TextField(
                 value = textState.value,
                 onValueChange = { textState.value = it },
-                label = { Text("Enter text") },
+                label = { Text("发送消息") },
                 shape = RoundedCornerShape(50), // Fully rounded corners
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
