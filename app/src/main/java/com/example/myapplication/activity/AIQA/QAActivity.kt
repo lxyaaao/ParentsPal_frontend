@@ -253,7 +253,7 @@ fun ConversationList(conversations: List<ConversationItem>, listState: LazyListS
     }
 }
 
-fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
+fun parseConversationHistory(myName: String, jsonResponse: String): List<ConversationItem> {
     val conversationItems = mutableListOf<ConversationItem>()
     val jsonObject = JSONObject(jsonResponse)
     val dataArray: JSONArray = jsonObject.getJSONArray("data")
@@ -273,7 +273,7 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
             val content = messageObject.getString("answer")
             val createdAt = messageObject.getString("created_at")
             conversationItems.add(ConversationItem(senderName, content, createdAt))
-            conversationItems.add(ConversationItem("User", messageObject.getString("query"), createdAt))
+            conversationItems.add(ConversationItem(myName, messageObject.getString("query"), createdAt))
         }
     }
 
@@ -287,7 +287,7 @@ suspend fun loadConversationHistory(username1: String, username2: String): List<
         val response = NetworkUtils.sendGetRequest(apiString)
 //        Log.d("response", response)
         try {
-            parseConversationHistory(response)
+            parseConversationHistory(username1, response)
         } catch (e: JSONException) {
             e.printStackTrace()
             emptyList()
@@ -318,6 +318,7 @@ private fun ConversationScreen(activity: Activity) {
         else if(ConversationInfo.userName != null){
             val history = loadConversationHistory(myName, ConversationInfo.userName!!)
             conversations.value = history
+            conversationId.value = ConversationInfo.userName!!
         }
     }
 
@@ -419,7 +420,8 @@ private fun ConversationScreen(activity: Activity) {
                                 )
                             }
                         }
-                    }) {
+                    },
+                        enabled = textState.value.isNotBlank()) {
                         Icon(
                             imageVector = Icons.Default.Send,
                             contentDescription = "Localized description"
