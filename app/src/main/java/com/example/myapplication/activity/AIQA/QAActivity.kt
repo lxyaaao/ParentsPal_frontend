@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -98,9 +101,21 @@ fun isUserConversation(): Boolean {
     return ConversationInfo.conversationType == "user" && ConversationInfo.userName != null
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QAScreen(activity: Activity) {
+
+    val showToast = remember { mutableStateOf(false) }
+
+    // 如果 showToast 为 true，则显示 Toast
+    if (showToast.value) {
+        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            Toast.makeText(context, "别点了，这里什么也没有", Toast.LENGTH_LONG).show()
+            showToast.value = false // 发送完 Toast 后重置状态
+        }
+    }
 //    val navController = rememberNavController()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Scaffold(
@@ -115,7 +130,7 @@ private fun QAScreen(activity: Activity) {
                 ),
                 title = {
                     Text(
-                        if (isUserConversation()) ConversationInfo.userName!! else "AI",
+                        if (isUserConversation()) ConversationInfo.userName!! else "大模型对话",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -125,10 +140,14 @@ private fun QAScreen(activity: Activity) {
                 },
                 actions = {
                     IconButton(onClick = {
-                        val intent = Intent(activity, AIHistoryActivity::class.java)
-                        activity.startActivity(intent)
-                        activity.overridePendingTransition(0, 0)
-                        activity.finish()
+                        if (isUserConversation()) {
+                            showToast.value = true
+                        } else {
+                            val intent = Intent(activity, AIHistoryActivity::class.java)
+                            activity.startActivity(intent)
+                            activity.overridePendingTransition(0, 0)
+                            activity.finish()
+                        }
 
                     }) {
                         Icon(
@@ -234,7 +253,7 @@ fun ConversationList(conversations: List<ConversationItem>, listState: LazyListS
     }
 }
 
-fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
+fun parseConversationHistory(myName: String, jsonResponse: String): List<ConversationItem> {
     val conversationItems = mutableListOf<ConversationItem>()
     val jsonObject = JSONObject(jsonResponse)
     val dataArray: JSONArray = jsonObject.getJSONArray("data")
@@ -254,7 +273,7 @@ fun parseConversationHistory(jsonResponse: String): List<ConversationItem> {
             val content = messageObject.getString("answer")
             val createdAt = messageObject.getString("created_at")
             conversationItems.add(ConversationItem(senderName, content, createdAt))
-            conversationItems.add(ConversationItem("User", messageObject.getString("query"), createdAt))
+            conversationItems.add(ConversationItem(myName, messageObject.getString("query"), createdAt))
         }
     }
 
@@ -268,7 +287,7 @@ suspend fun loadConversationHistory(username1: String, username2: String): List<
         val response = NetworkUtils.sendGetRequest(apiString)
 //        Log.d("response", response)
         try {
-            parseConversationHistory(response)
+            parseConversationHistory(username1, response)
         } catch (e: JSONException) {
             e.printStackTrace()
             emptyList()
@@ -299,6 +318,7 @@ private fun ConversationScreen(activity: Activity) {
         else if(ConversationInfo.userName != null){
             val history = loadConversationHistory(myName, ConversationInfo.userName!!)
             conversations.value = history
+            conversationId.value = ConversationInfo.userName!!
         }
     }
 
@@ -326,8 +346,12 @@ private fun ConversationScreen(activity: Activity) {
             TextField(
                 value = textState.value,
                 onValueChange = { textState.value = it },
-                label = { Text("Enter text") },
+                label = { Text("发送消息") },
                 shape = RoundedCornerShape(50), // Fully rounded corners
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .height(56.dp),
@@ -396,7 +420,8 @@ private fun ConversationScreen(activity: Activity) {
                                 )
                             }
                         }
-                    }) {
+                    },
+                        enabled = textState.value.isNotBlank()) {
                         Icon(
                             imageVector = Icons.Default.Send,
                             contentDescription = "Localized description"
