@@ -21,6 +21,8 @@ activity = "1.9.2"
 compiler = "3.2.0-alpha11"
 firebaseAnalytics = "22.1.2"
 firebaseMessaging = "24.1.0"
+uiTestJunit4Android = "1.7.6"
+firebaseInappmessagingDisplay = "21.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -51,6 +53,8 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-compiler = { group = "androidx.databinding", name = "compiler", version.ref = "compiler" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+androidx-ui-test-junit4-android = { group = "androidx.compose.ui", name = "ui-test-junit4-android", version.ref = "uiTestJunit4Android" }
+firebase-inappmessaging-display = { group = "com.google.firebase", name = "firebase-inappmessaging-display", version.ref = "firebaseInappmessagingDisplay" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

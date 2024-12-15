@@ -60,8 +60,8 @@ dependencies {
 }
 
 dependencies {
+    implementation(libs.androidx.ui.test.junit4.android)
     implementation(libs.firebase.analytics)
-
     implementation(libs.androidx.compiler)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)
@@ -80,6 +80,15 @@ dependencies {
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation ("com.google.firebase:firebase-messaging:23.0.0")
+    implementation ("com.google.firebase:firebase-inappmessaging-display")
+    implementation ("com.google.firebase:firebase-analytics")
+    implementation ("com.github.getActivity:XXPermissions:20.0")
+    implementation (platform("com.google.firebase:firebase-bom:32.8.0"))
+    testImplementation("org.mockito:mockito-core:5.5.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
 }
 
 android {
@@ -92,8 +101,13 @@ android {
         kotlinCompilerExtensionVersion = "1.1.1"
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 

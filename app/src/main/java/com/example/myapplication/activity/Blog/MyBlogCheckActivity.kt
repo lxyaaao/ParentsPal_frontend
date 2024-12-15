@@ -185,10 +185,9 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             .clip(CircleShape)
                             .padding(4.dp)
                             .clickable {
-                                // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
                                 intent.putExtra("type", "user")
-                                intent.putExtra("username", articleUserName) // TODO
+                                intent.putExtra("username", articleUserName)
                                 activity.startActivity(intent)
                                 activity.finish()
                             },
@@ -202,10 +201,9 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             text = it.username,
                             style = TextStyle(fontSize = 16.sp),
                             modifier = Modifier.clickable {
-                                // TODO: Add conversation name
                                 val intent = Intent(activity, QAActivity::class.java)
                                 intent.putExtra("type", "user")
-                                intent.putExtra("username", articleUserName) // TODO
+                                intent.putExtra("username", articleUserName)
                                 activity.startActivity(intent)
                                 activity.finish()
                             }
