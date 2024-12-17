@@ -75,7 +75,7 @@ object NetworkUtils {
             val jsonInputString = """
                 {
                     "username":"$myName",
-                    "conversationId":"$conversation",
+                    "conversationId":"",
                     "query":"$message",
                     "mode":"blocking"
                 }
