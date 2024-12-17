@@ -38,16 +38,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.myapplication.activity.Main.Alarm
-import com.example.myapplication.activity.Main.AlarmResponse
-import com.example.myapplication.activity.Main.saveAlarms
 import com.example.myapplication.api.LoginRequest
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.RetrofitClient
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.sendPatchRequest
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

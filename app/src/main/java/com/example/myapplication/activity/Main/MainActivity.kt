@@ -58,15 +58,63 @@ import com.example.myapplication.activity.Blog.BlogActivity
 import com.example.myapplication.activity.Me.MeActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.google.android.gms.common.GoogleApiAvailability
+import com.hjq.permissions.XXPermissions
+import com.hjq.permissions.OnPermissionCallback
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.security.Permission
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        try {
+            GoogleApiAvailability.getInstance().makeGooglePlayServicesAvailable(this)
+            val activity:Activity = this
+            val context:Context = this
+
+            XXPermissions.with(this)
+                // 申请单个权限
+//            .permission(Permission.RECORD_AUDIO)
+                // 申请多个权限
+//            .permission(Permission.Group.CALENDAR)
+                // 设置权限请求拦截器（局部设置）
+                //.interceptor(new PermissionInterceptor())
+                // 设置不触发错误检测机制（局部设置）
+                //.unchecked()
+                .request(object : OnPermissionCallback {
+
+                    override fun onGranted(permissions: MutableList<String>, allGranted: Boolean) {
+                        if (!allGranted) {
+                            Toast.makeText(activity, "获取部分权限成功，但部分权限未正常授予", Toast.LENGTH_SHORT).show()
+                            return
+                        }
+                        Toast.makeText(activity, "获取录音和日历权限成功", Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun onDenied(permissions: MutableList<String>, doNotAskAgain: Boolean) {
+                        if (doNotAskAgain) {
+                            Toast.makeText(activity, "被永久拒绝授权，请手动授予录音和日历权限", Toast.LENGTH_SHORT).show()
+                            // 如果是被永久拒绝就跳转到应用权限系统设置页面
+                            XXPermissions.startPermissionActivity(context, permissions)
+                        } else {
+                            Toast.makeText(activity, "获取录音和日历权限失败", Toast.LENGTH_SHORT).show()
+
+                        }
+                    }
+                })
+        } catch (e:Exception) {
+            println("firebase error")
+        }
+
+
+
         setContent {
             MyApplicationTheme {
                 MainScreen(this)
