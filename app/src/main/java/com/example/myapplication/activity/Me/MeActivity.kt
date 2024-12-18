@@ -114,15 +114,8 @@ private fun MeMainScreen(activity: Activity) {
             Divider(color = Color.LightGray, thickness = 1.dp)
 
             Spacer(modifier = Modifier.height(24.dp))
-            ButtonWithBars("我的关注") {
+            ButtonWithBars("好友列表") {
                 val intent = Intent(activity, UserListActivity::class.java)
-                intent.putExtra("selectedTabIndex", 0)
-                activity.startActivity(intent)
-                activity.finish()
-            }
-            ButtonWithBars("我的粉丝") {
-                val intent = Intent(activity, UserListActivity::class.java)
-                intent.putExtra("selectedTabIndex", 1)
                 activity.startActivity(intent)
                 activity.finish()
             }

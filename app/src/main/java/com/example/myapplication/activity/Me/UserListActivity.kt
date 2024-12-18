@@ -116,59 +116,21 @@ private fun UserListScreen(activity: Activity, selectedTabIndex: Int) {
             )
         }
     ) { paddingValues->
-        Scaffold(
-            topBar = {
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    val tabTitles = listOf("关注", "粉丝")
-                    tabTitles.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = {
-                                selectedTabIndex = index
-                            },
-                            text = { Text(title) }
-                        )
-                    }
-                }
-            },
-            modifier = Modifier.padding(paddingValues)
-        ) { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(paddingValues)
-                ) {
-                    when (selectedTabIndex) {
-                        0 -> {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp)
-                            ) {
-                                items(users) { user ->
-                                    UserListItem(user = user, activity)
-                                }
-                            }
-                        }
-                        1 -> {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(16.dp)
-                            ) {
-                                items(users) { user ->
-                                    UserListItem(user = user, activity)
-                                }
-                            }
-                        }
-                    }
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(paddingValues)
+        ) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                items(users) { user ->
+                    UserListItem(user = user, activity)
                 }
             }
+        }
     }
 
     if (backFlag) {
