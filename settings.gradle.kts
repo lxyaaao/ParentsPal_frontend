@@ -18,6 +18,12 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
+dependencyResolutionManagement {
+    repositories {
+        // JitPack 远程仓库：https://jitpack.io
+        maven { url = uri("https://jitpack.io") }
+    }
+}
 
 rootProject.name = "My Application"
 include(":app")
