@@ -99,7 +99,7 @@ private fun MeMainScreen(activity: Activity) {
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(60.dp))
         ProfileSection(
-            avatarResId = R.drawable.baseline_account_circle_24,
+            avatarResId = R.drawable.photo1,
             name = name,
             activity
         )

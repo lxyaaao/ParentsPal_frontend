@@ -113,7 +113,7 @@ private fun EditProfileScreen(activity: Activity) {
             ) {
                 ButtonWithTextAndIcon(
                     text = "头像",
-                    icon = painterResource(id = R.drawable.baseline_account_circle_24),  // 替换为实际图片资源
+                    icon = painterResource(id = R.drawable.photo1),  // 替换为实际图片资源
                     onClick = { profileClick = true }
                 )
 
@@ -144,7 +144,7 @@ private fun EditProfileScreen(activity: Activity) {
             },
             text = {
                 Image(
-                    painter = painterResource(id = R.drawable.baseline_account_circle_24),
+                    painter = painterResource(id = R.drawable.photo1),
                     contentDescription = "Large Avatar",
                     modifier = Modifier
                         .size(300.dp)

@@ -178,7 +178,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
-                        painter = painterResource(id = R.drawable.baseline_account_circle_24),
+                        painter = painterResource(id = R.drawable.photo1),
                         contentDescription = "Avatar",
                         modifier = Modifier
                             .size(48.dp)

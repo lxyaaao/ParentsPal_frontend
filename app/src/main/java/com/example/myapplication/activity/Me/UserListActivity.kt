@@ -246,7 +246,7 @@ suspend fun FollowingUserList(myName: String): List<User> {
             e.printStackTrace()
             list
         }
-        list.map { User(avatarResId = R.drawable.baseline_account_circle_24, username = it) }
+        list.map { User(avatarResId = R.drawable.photo1, username = it) }
     }
 }
 

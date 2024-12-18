@@ -329,14 +329,13 @@ fun BlogContentCard(article: Article, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .background(Color.White, shape = RoundedCornerShape(8.dp))
-            .border(1.dp, Color.LightGray, shape = RoundedCornerShape(8.dp))
             .clickable { onClick() }
     ) {
         Column (modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp)) {
             // 头像和昵称
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = R.drawable.baseline_account_circle_24),
+                    painter = painterResource(id = R.drawable.photo1),
                     contentDescription = "Avatar",
                     modifier = Modifier
                         .size(64.dp)

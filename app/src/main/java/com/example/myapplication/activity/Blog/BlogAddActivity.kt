@@ -268,7 +268,6 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
                 activity.finish()
             }
         }
-
     }
 
     return false

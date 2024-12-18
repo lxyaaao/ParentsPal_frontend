@@ -62,6 +62,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import android.widget.Toast
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,7 +90,7 @@ class MainActivity : ComponentActivity() {
 
             val sharedPreferences: SharedPreferences =
                 this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            var myName = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
+            val myName = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
 
             // 你可以在这里将 token 发送到你的服务器或进行其他处理
             lifecycleScope.launch {
@@ -192,7 +196,7 @@ fun HomeMainScreen(activity: Activity) {
                 activity.finish()
             }
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         CustomButton(
             title = "闹钟",
             description = getAlarm(activity),
@@ -202,7 +206,7 @@ fun HomeMainScreen(activity: Activity) {
                 activity.finish()
             }
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         CustomButton(
             title = "疫苗",
             description = getImmunization(activity),
@@ -285,10 +289,10 @@ fun PersonScreen(activity: Activity) {
 fun CustomButton(title: String, description: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .height(160.dp)
+            .height(180.dp)
             .fillMaxWidth()
             .padding(8.dp)
-            .background(Color.LightGray.copy(alpha = 0.2f))
+            .background(Color.White)
             .clickable { onClick() }
     ) {
         Column(
@@ -299,12 +303,13 @@ fun CustomButton(title: String, description: String, onClick: () -> Unit) {
         ) {
             Text(
                 text = title,
-                fontSize = 12.sp,
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp),
                 color = Color.Black
             )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = description,
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = Color.Black
             )
         }
@@ -339,13 +344,13 @@ fun getImmunization(activity: Activity): String {
 
     val immunizations by remember { mutableStateOf(loadImmunizations(sharedPreferences)) }
 
-    val StringBuilder = StringBuilder()
+    val stringBuilder = StringBuilder()
     for (i in immunizations.indices.reversed()) {
         val immunization = immunizations[i]
-        StringBuilder.append("${immunization.vaccineName}\n")
+        stringBuilder.append("${immunization.vaccineName}\n")
     }
 
-    return StringBuilder.toString()
+    return stringBuilder.toString()
 }
 
 @Composable
