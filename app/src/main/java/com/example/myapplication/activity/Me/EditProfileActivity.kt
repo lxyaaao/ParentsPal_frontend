@@ -53,7 +53,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.R
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.sendPatchRequest
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.util.Date
 import java.util.Locale
 
@@ -161,6 +166,25 @@ private fun EditProfileScreen(activity: Activity) {
             onConfirm = { newName ->
                 name = newName
                 saveNameToSharedPreferences(activity, newName)
+
+                val parentId = sharedPreferences.getInt("parentId", 0)
+                val apiString = "api/appuser/${parentId}/change-name"
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    val requestBody = JSONObject().apply {
+                        put("newName", newName)
+                    }
+
+                    println(requestBody)
+
+                    val response = sendPatchRequest(apiString, requestBody.toString())
+                    try {
+                        println(response)
+                    } catch (e: Exception) {
+                        println("Json error: $response")
+                    }
+                }
+
                 nameClick = false })
     }
 }
