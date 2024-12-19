@@ -8,9 +8,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,12 +56,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -176,14 +186,15 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)) {
                     Image(
                         painter = painterResource(id = R.drawable.photo1),
                         contentDescription = "Avatar",
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .padding(4.dp)
                             .clickable {
                                 val intent = Intent(activity, QAActivity::class.java)
                                 intent.putExtra("type", "user")
@@ -250,16 +261,33 @@ private fun MyBlogCheckScreen(activity: Activity) {
                 Box {
                     var isLiked by remember { mutableStateOf(likedArticleIds.contains(articleId)) }
                     var isSaved by remember { mutableStateOf(savedArticleIds.contains(articleId)) }
-                    var commentText by remember { mutableStateOf("") }
+                    var commentText by remember { mutableStateOf(TextFieldValue(text = "")) }
                     var opLikes by remember { mutableStateOf("") }
                     var opSaves by remember { mutableStateOf("") }
+
+                    val focusRequester = remember { FocusRequester() }
+                    val focusManager = LocalFocusManager.current
+                    val keyboardController = LocalSoftwareKeyboardController.current
 
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(bottom = 16.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = MutableInteractionSource()
+                            ) {
+                                focusManager.clearFocus() // 清除焦点
+                                keyboardController?.hide() // 隐藏键盘
+                            }
                     ) {
-                        CommentSection(articleId, activity)
+                        CommentSection(articleId, activity, onClick = {username ->
+                            commentText = TextFieldValue(
+                                text = "回复 $username: ",
+                                selection = TextRange("回复 $username: ".length) // 光标定位到末尾
+                            )
+                            focusRequester.requestFocus()
+                        })
                     }
 
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -345,6 +373,8 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
 
+                            var isFocused by remember { mutableStateOf(false) }
+
                             TextField(
                                 value = commentText,
                                 onValueChange = { commentText = it },
@@ -352,19 +382,23 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(56.dp)
-                                    .padding(start = 4.dp, end = 4.dp),
+                                    .padding(start = 4.dp, end = 4.dp)
+                                    .focusRequester(focusRequester)
+                                    .onFocusChanged { focusState ->
+                                        isFocused = focusState.isFocused
+                                    },
                                 singleLine = true
                             )
 
                             IconButton(
                                 onClick = {
-                                    if (commentText.isNotBlank()) {
+                                    if (commentText.text.isNotBlank()) {
                                         val apiPath = "api/comment"
 
                                         val requestBody = JSONObject().apply {
                                             put("articleId", articleId)
                                             put("userId", parentId)
-                                            put("content", commentText)
+                                            put("content", commentText.text)
                                         }
                                         println(requestBody)
                                         CoroutineScope(Dispatchers.Main).launch {
@@ -375,11 +409,15 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                             println(responseString)
                                         }
 
-                                        commentText = ""
+                                        commentText = TextFieldValue(
+                                            text = "",
+                                        )
 
                                         val editor = sharedPreferences.edit()
                                         editor.putBoolean("refreshCommentState", true)
                                         editor.apply()
+
+                                        focusManager.clearFocus()
 
                                         val intent = Intent(activity, MyBlogCheckActivity::class.java)
                                         activity.startActivity(intent)
@@ -463,7 +501,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
 }
 
 @Composable
-fun CommentSection(articleId: Int, activity: Activity) {
+fun CommentSection(articleId: Int, activity: Activity, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val refreshState = sharedPreferences.getBoolean("refreshCommentState", false)
@@ -501,7 +539,8 @@ fun CommentSection(articleId: Int, activity: Activity) {
         LazyColumn(modifier = Modifier.fillMaxWidth()
             .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
-                CommentItem(comment = comment, activity)
+                CommentItem(comment = comment, activity, onClick = { username ->
+                    onClick(username) })
             }
         }
 
@@ -509,8 +548,9 @@ fun CommentSection(articleId: Int, activity: Activity) {
 
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CommentItem(comment: Comment, activity: Activity) {
+fun CommentItem(comment: Comment, activity: Activity, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val parentId = sharedPreferences.getInt("parentId", 0)
@@ -530,6 +570,9 @@ fun CommentItem(comment: Comment, activity: Activity) {
                 .weight(1f)
                 .pointerInput(Unit) {
                     detectTapGestures(
+                        onTap = {
+                            onClick(comment.username)
+                        },
                         onLongPress = {
                             showDeleteDialog = true
                         }
