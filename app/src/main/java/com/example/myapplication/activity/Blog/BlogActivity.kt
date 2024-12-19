@@ -332,18 +332,18 @@ fun BlogContentCard(article: Article, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         Column (modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp)) {
-            // 头像和昵称
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(vertical = 8.dp)) {
                 Image(
                     painter = painterResource(id = R.drawable.photo1),
                     contentDescription = "Avatar",
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .padding(4.dp),
+                        .size(48.dp)
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(text = article.username)
             }
 

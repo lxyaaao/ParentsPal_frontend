@@ -169,10 +169,9 @@ fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
             painter = painterResource(id = avatarResId),
             contentDescription = "Avatar",
             modifier = Modifier
-                .size(64.dp) // 头像大小
-                .clip(CircleShape) // 圆形头像
-                .clickable { showImage = true }  // 点击头像显示对话框
-                .padding(4.dp),
+                .size(56.dp)
+                .clip(CircleShape)
+                .clickable { showImage = true } ,
             contentScale = ContentScale.Crop
         )
 

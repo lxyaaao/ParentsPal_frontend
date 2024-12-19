@@ -183,7 +183,8 @@ fun ButtonWithTextAndIcon(text: String, icon: Painter, onClick: () -> Unit) {
             Image(
                 painter = icon,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(36.dp)
+                    .clip(CircleShape)
             )
         }
     }
