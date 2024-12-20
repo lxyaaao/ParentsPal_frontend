@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -51,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,6 +67,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.File
 
 class UserListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -161,13 +166,43 @@ fun UserListItem(user: User, activity: Activity) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = user.avatarResId),
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-            )
+            val sharedPreferences: SharedPreferences =
+                activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+            val context = LocalContext.current
+            //TODO: get userid
+            val userId = sharedPreferences.getInt("parentId", 0)
+
+            var localImagePath by remember { mutableStateOf<String?>(null) }
+            val file = File(context.cacheDir, "downloaded_image_$userId.jpg")
+            localImagePath = file.absolutePath
+
+            if (localImagePath != null) {
+                val imageBitmap = remember(localImagePath) {
+                    BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
+                }
+
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    val resourceName = "photo${userId % 12 + 1}" // 动态的资源名称
+                    val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+
+                    Image(
+                        painter = painterResource(id = resId),
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = user.username, color = Color.Black)
         }

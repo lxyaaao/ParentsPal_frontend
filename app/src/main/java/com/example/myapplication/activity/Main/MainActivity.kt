@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,10 +64,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import android.widget.Toast
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import com.example.myapplication.utils.downloadImage
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -182,8 +184,7 @@ fun MainScreen(activity: Activity) {
 
 @Composable
 fun HomeMainScreen(activity: Activity) {
-    val sharedPreferences: SharedPreferences =
-        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    updateProfile(activity)
 
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(64.dp))
@@ -373,4 +374,19 @@ fun getAlarm(activity: Activity): String {
     val String = StringBuilder.toString()
 
     return String
+}
+
+@Composable
+fun updateProfile(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    val context = LocalContext.current
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
+    LaunchedEffect(Unit) {
+        val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
+        val apiString = "api/appuser/${parentId}/profile-picture"
+        downloadImage(apiString, file.absolutePath)
+    }
 }

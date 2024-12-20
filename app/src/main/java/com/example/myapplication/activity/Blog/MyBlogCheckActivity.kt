@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -60,10 +61,14 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -84,6 +89,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.io.File
 
 class MyBlogCheckActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -186,24 +192,56 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     )
                 }
 
+                val context = LocalContext.current
+                var localImagePath by remember { mutableStateOf<String?>(null) }
+                val file = File(context.cacheDir, "downloaded_image_$articleUserId.jpg")
+                localImagePath = file.absolutePath
+
                 Row(verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .padding(vertical = 8.dp)) {
-                    Image(
-                        painter = painterResource(id = R.drawable.photo1),
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                val intent = Intent(activity, QAActivity::class.java)
-                                intent.putExtra("type", "user")
-                                intent.putExtra("username", articleUserName)
-                                activity.startActivity(intent)
-                                activity.finish()
-                            },
-                        contentScale = ContentScale.Crop
-                    )
+                    if (localImagePath != null) {
+                        val imageBitmap = remember(localImagePath) {
+                            BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
+                        }
+
+                        if (imageBitmap != null) {
+                            Image(
+                                bitmap = imageBitmap,
+                                contentDescription = "Avatar",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        val intent = Intent(activity, QAActivity::class.java)
+                                        intent.putExtra("type", "user")
+                                        intent.putExtra("username", articleUserName)
+                                        activity.startActivity(intent)
+                                        activity.finish()
+                                    },
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            val resourceName = "photo${articleUserId % 12 + 1}" // 动态的资源名称
+                            val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+
+                            Image(
+                                painter = painterResource(id = resId),
+                                contentDescription = "Avatar",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        val intent = Intent(activity, QAActivity::class.java)
+                                        intent.putExtra("type", "user")
+                                        intent.putExtra("username", articleUserName)
+                                        activity.startActivity(intent)
+                                        activity.finish()
+                                    },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -279,6 +317,9 @@ private fun MyBlogCheckScreen(activity: Activity) {
                             ) {
                                 focusManager.clearFocus() // 清除焦点
                                 keyboardController?.hide() // 隐藏键盘
+                                commentText = TextFieldValue(
+                                    text = "",
+                                )
                             }
                     ) {
                         CommentSection(articleId, activity, onClick = {username ->

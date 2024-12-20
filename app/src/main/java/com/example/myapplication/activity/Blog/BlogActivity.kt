@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -55,8 +56,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,6 +79,7 @@ import com.example.myapplication.activity.Main.QuestionAnswerScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.google.gson.Gson
+import java.io.File
 
 class BlogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -324,6 +330,13 @@ fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
 
 @Composable
 fun BlogContentCard(article: Article, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val parentId = article.userId
+
+    var localImagePath by remember { mutableStateOf<String?>(null) }
+    val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
+    localImagePath = file.absolutePath
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -335,14 +348,35 @@ fun BlogContentCard(article: Article, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .padding(vertical = 8.dp)) {
-                Image(
-                    painter = painterResource(id = R.drawable.photo1),
-                    contentDescription = "Avatar",
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                if (localImagePath != null) {
+                    val imageBitmap = remember(localImagePath) {
+                        BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
+                    }
+
+                    if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        val resourceName = "photo${parentId % 12 + 1}" // 动态的资源名称
+                        val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+
+                        Image(
+                            painter = painterResource(id = resId),
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = article.username)
             }

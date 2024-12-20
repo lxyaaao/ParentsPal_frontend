@@ -1,7 +1,10 @@
 package com.example.myapplication.activity.Me
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,9 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,7 +65,9 @@ import com.example.myapplication.activity.Main.NavItem
 import com.example.myapplication.activity.Main.QuestionAnswerScreen
 import com.example.myapplication.activity.Main.ScrollContent
 import com.example.myapplication.activity.Main.ShareScreen
+import com.example.myapplication.activity.Main.updateProfile
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import java.io.File
 
 class MeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,6 +104,9 @@ private fun MeScreen(activity: Activity) {
 @Composable
 private fun MeMainScreen(activity: Activity) {
     val name = getNameFromSharedPreferences(activity)
+
+    updateProfile(activity)
+
 
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(60.dp))
@@ -158,20 +170,30 @@ fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
     var showImage by remember { mutableStateOf(false) }  // 控制大图是否显示
     var showEditButton by remember { mutableStateOf(false) }  // 控制“编辑资料”按钮是否显示
 
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val context = LocalContext.current
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
+    var localImagePath by remember { mutableStateOf<String?>(null) }
+    val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
+    localImagePath = file.absolutePath
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = Arrangement.Start // 左对齐
     ) {
-        // 头像
         Image(
-            painter = painterResource(id = avatarResId),
+            bitmap = remember(localImagePath) {
+                BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
+            } ?: ImageBitmap.imageResource(id = R.drawable.photo9), // 默认占位图
             contentDescription = "Avatar",
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .clickable { showImage = true } ,
+                .clickable { showImage = true },
             contentScale = ContentScale.Crop
         )
 
