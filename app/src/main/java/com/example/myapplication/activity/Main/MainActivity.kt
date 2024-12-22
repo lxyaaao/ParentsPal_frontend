@@ -46,6 +46,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,13 +62,11 @@ import com.example.myapplication.activity.Blog.BlogActivity
 import com.example.myapplication.activity.Me.MeActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.downloadImage
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import com.example.myapplication.utils.downloadImage
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -228,7 +228,9 @@ fun BottomNavigationBar(navController: NavController) {
         NavItem.QuestionAnswer,
         NavItem.Person
     )
-    NavigationBar {
+    NavigationBar(
+        containerColor = Color(0xfff9e8e9),
+    ) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         items.forEach { item ->
             NavigationBarItem(
