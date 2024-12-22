@@ -87,6 +87,7 @@ class QAActivity : ComponentActivity() {
         ConversationInfo.conversationType = intent.getStringExtra("type")
         ConversationInfo.userName = intent.getStringExtra("username")
 //        ConversationInfo.userName = "Alice"
+
         setContent {
             MyApplicationTheme {
                 QAScreen(this)
@@ -96,6 +97,54 @@ class QAActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun PrintColorScheme() {
+    val colorScheme = MaterialTheme.colorScheme
+    val colorSchemeProperties = listOf(
+        "primary" to colorScheme.primary,
+        "onPrimary" to colorScheme.onPrimary,
+        "primaryContainer" to colorScheme.primaryContainer,
+        "onPrimaryContainer" to colorScheme.onPrimaryContainer,
+        "secondary" to colorScheme.secondary,
+        "onSecondary" to colorScheme.onSecondary,
+        "secondaryContainer" to colorScheme.secondaryContainer,
+        "onSecondaryContainer" to colorScheme.onSecondaryContainer,
+        "tertiary" to colorScheme.tertiary,
+        "onTertiary" to colorScheme.onTertiary,
+        "tertiaryContainer" to colorScheme.tertiaryContainer,
+        "onTertiaryContainer" to colorScheme.onTertiaryContainer,
+        "background" to colorScheme.background,
+        "onBackground" to colorScheme.onBackground,
+        "surface" to colorScheme.surface,
+        "onSurface" to colorScheme.onSurface,
+        "surfaceVariant" to colorScheme.surfaceVariant,
+        "onSurfaceVariant" to colorScheme.onSurfaceVariant,
+        "error" to colorScheme.error,
+        "onError" to colorScheme.onError,
+        "errorContainer" to colorScheme.errorContainer,
+        "onErrorContainer" to colorScheme.onErrorContainer,
+        "outline" to colorScheme.outline,
+        "inverseOnSurface" to colorScheme.inverseOnSurface,
+        "inverseSurface" to colorScheme.inverseSurface,
+        "inversePrimary" to colorScheme.inversePrimary,
+        "surfaceTint" to colorScheme.surfaceTint,
+    )
+
+    colorSchemeProperties.forEach { (name, color) ->
+        Log.d("ColorScheme", "$name: ${color.toHexString()}")
+    }
+}
+
+fun Color.toHexString(): String {
+    return String.format(
+        "#%02X%02X%02X%02X",
+        (alpha * 255).toInt(),
+        (red * 255).toInt(),
+        (green * 255).toInt(),
+        (blue * 255).toInt(),
+
+    )
+}
 
 fun isUserConversation(): Boolean {
     return ConversationInfo.conversationType == "user" && ConversationInfo.userName != null
@@ -105,7 +154,7 @@ fun isUserConversation(): Boolean {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QAScreen(activity: Activity) {
-
+    PrintColorScheme()
     val showToast = remember { mutableStateOf(false) }
 
     // 如果 showToast 为 true，则显示 Toast

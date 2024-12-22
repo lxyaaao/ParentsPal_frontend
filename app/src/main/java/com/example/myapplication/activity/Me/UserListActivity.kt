@@ -170,8 +170,7 @@ fun UserListItem(user: User, activity: Activity) {
                 activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
             val context = LocalContext.current
-            //TODO: get userid
-            val userId = sharedPreferences.getInt("parentId", 0)
+            val userId = user.userId
 
             var localImagePath by remember { mutableStateOf<String?>(null) }
             val file = File(context.cacheDir, "downloaded_image_$userId.jpg")
@@ -211,20 +210,25 @@ fun UserListItem(user: User, activity: Activity) {
     }
 }
 
-fun parseConversationList(response: String): List<String> {
+fun parseConversationList(response: String, myName: String): List<User> {
     val jsonObject = JSONObject(response)
     val dataArray: JSONArray = jsonObject.getJSONArray("data")
-    val namesSet = mutableSetOf<String>()
+    val userSet = mutableSetOf<User>()
 
     for (i in 0 until dataArray.length()) {
         val messageObject = dataArray.getJSONObject(i)
         val senderName = messageObject.getString("sender_name")
         val receiverName = messageObject.getString("receiver_name")
-        namesSet.add(senderName)
-        namesSet.add(receiverName)
+        val senderId = messageObject.getInt("sender_id")
+        val receiverId = messageObject.getInt("receiver_id")
+        if(senderName == myName) {
+            userSet.add(User(avatarResId = R.drawable.photo1, username = receiverName, userId = receiverId))
+        } else {
+            userSet.add(User(avatarResId = R.drawable.photo1, username = senderName, userId = senderId))
+        }
     }
 
-    return namesSet.toList()
+    return userSet.toList()
 }
 
 
@@ -236,15 +240,15 @@ suspend fun FollowingUserList(myName: String): List<User> {
         val apiPath = "api/conversations/latest-messages?username=${myName}"
         val response = sendGetRequest(apiPath)
         Log.d("response", response)
-        var list = emptyList<String>()
+        var list = emptyList<User>()
         try {
-            list = parseConversationList(response)
+            list = parseConversationList(response, myName)
         } catch (e: JSONException) {
             e.printStackTrace()
             list
         }
-        list.map { User(avatarResId = R.drawable.photo1, username = it) }
+        list
     }
 }
 
-data class User(val avatarResId: Int, val username: String)
+data class User(val avatarResId: Int, val username: String, val userId: Int = 0)
