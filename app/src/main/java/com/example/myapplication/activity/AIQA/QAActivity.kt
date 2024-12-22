@@ -100,6 +100,7 @@ class QAActivity : ComponentActivity() {
 @Composable
 fun PrintColorScheme() {
     val colorScheme = MaterialTheme.colorScheme
+
     val colorSchemeProperties = listOf(
         "primary" to colorScheme.primary,
         "onPrimary" to colorScheme.onPrimary,
