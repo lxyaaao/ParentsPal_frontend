@@ -60,7 +60,7 @@ dependencies {
 }
 
 dependencies {
-    implementation(libs.androidx.ui.test.junit4.android)
+//    implementation(libs.androidx.ui.test.junit4.android)
     implementation(libs.firebase.analytics)
     implementation(libs.androidx.compiler)
     implementation(libs.androidx.activity)
@@ -89,24 +89,24 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
-    // Kotlin 测试依赖
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.8.10")
-    testImplementation("junit:junit:4.13.2")
-
-    // Mocking 库
-    testImplementation("io.mockk:mockk:1.12.0")
-
-    // Compose 测试相关
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.3.0")
-    androidTestImplementation("androidx.compose.ui:ui-test-manifest:1.3.0")
-
-    // Coroutine 测试库
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
-
-    // AndroidX 测试库（UI 测试、JUnit4）
-    androidTestImplementation("androidx.test.ext:junit:1.1.4")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
-    androidTestImplementation("androidx.test:core:1.5.0")
+//    // Kotlin 测试依赖
+//    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.8.10")
+//    testImplementation("junit:junit:4.13.2")
+//
+//    // Mocking 库
+//    testImplementation("io.mockk:mockk:1.12.0")
+//
+//    // Compose 测试相关
+//    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.3.0")
+//    androidTestImplementation("androidx.compose.ui:ui-test-manifest:1.3.0")
+//
+//    // Coroutine 测试库
+//    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+//
+//    // AndroidX 测试库（UI 测试、JUnit4）
+//    androidTestImplementation("androidx.test.ext:junit:1.1.4")
+//    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
+//    androidTestImplementation("androidx.test:core:1.5.0")
 
 
 }

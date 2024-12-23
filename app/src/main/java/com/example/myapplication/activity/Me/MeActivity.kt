@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -33,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +68,7 @@ import com.example.myapplication.activity.Main.ScrollContent
 import com.example.myapplication.activity.Main.ShareScreen
 import com.example.myapplication.activity.Main.updateProfile
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import com.example.myapplication.utils.getUserExpertStatus
 import java.io.File
 
 class MeActivity : ComponentActivity() {
@@ -178,6 +181,14 @@ fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
     val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
     localImagePath = file.absolutePath
 
+    var isExpert by remember { mutableStateOf(false) }
+
+    // Launch a coroutine to get the expert status
+    LaunchedEffect(parentId) {
+        isExpert = getUserExpertStatus(parentId)
+        Log.d("MeActivity", "isExpert: $isExpert")
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -203,6 +214,7 @@ fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
         Text(
             text = name,
             fontSize = 20.sp,
+            color = if (isExpert) Color(0xFF66CCFF) else MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .align(Alignment.CenterVertically) // 垂直居中对齐
                 .align(Alignment.CenterVertically) // 垂直居中对齐

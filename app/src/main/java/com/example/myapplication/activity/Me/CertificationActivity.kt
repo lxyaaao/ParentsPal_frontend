@@ -4,10 +4,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,27 +19,30 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import java.io.File
 
 class CertificationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,11 +56,27 @@ class CertificationActivity : ComponentActivity() {
     }
 }
 
+// 将 URI 转换为 File 对象
+private fun uriToFile(uri: Uri, context: Context): File {
+    val contentResolver = context.contentResolver
+    val fileName = "${System.currentTimeMillis()}.jpg"  // 临时文件名
+    val tempFile = File(context.cacheDir, fileName)
+
+    contentResolver.openInputStream(uri)?.use { inputStream ->
+        tempFile.outputStream().use { outputStream ->
+            inputStream.copyTo(outputStream)
+        }
+    }
+    return tempFile
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CertificationScreen(activity: Activity) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+
+    val context = LocalContext.current
 
     var backFlag by remember { mutableStateOf(false) }
     var confirmClick by remember { mutableStateOf(false) }
@@ -67,6 +89,9 @@ private fun CertificationScreen(activity: Activity) {
 
     var certificationClick by remember { mutableStateOf(false) }
     var certification by remember { mutableStateOf(sharedPreferences.getString("job", " ") ?: " ") }
+
+    var changeClick by remember { mutableStateOf(false) }
+
 
     Scaffold(
         topBar = {
@@ -163,18 +188,44 @@ private fun CertificationScreen(activity: Activity) {
                 jobClick = false })
     }
 
+
+
     if (certificationClick) {
         AlertDialog(
             onDismissRequest = { certificationClick = false },
             confirmButton = {
-                Button(onClick = { certificationClick = true }) {
+                Button(onClick = {
+                    changeClick = true
+                    certificationClick = false
+                }) {
                     Text("上传新证书")
                 }
+
             },
             text = {
                 // 证书显示的相关逻辑
             }
         )
+    }
+
+
+    if (changeClick) {
+        var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+
+        // 打开文件选择器
+        val filePickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            selectedFileUri = uri // 将选中的文件 URI 存储到状态中
+            selectedFileUri?.let { fileUri ->
+                val file = uriToFile(fileUri, activity)
+                uploadCertification(file, activity, context)
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            filePickerLauncher.launch("image/*")
+        }
     }
 }
 

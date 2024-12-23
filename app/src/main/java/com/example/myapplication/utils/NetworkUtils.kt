@@ -289,3 +289,27 @@ suspend fun sendPatchRequest(apiString: String, requestBody: String): String {
         }
     }
 }
+
+suspend fun getUserExpertStatus(parentId: Int): Boolean {
+    return withContext(Dispatchers.IO) {
+        val urlString = "http://parentspal.natapp1.cc/api/appuser/$parentId/expert-status"
+        val url = URL(urlString)
+
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+
+        try {
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                connection.inputStream.use { it.reader().use { reader -> reader.readText().toBoolean() } }
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            connection.disconnect()
+        }
+    }
+}

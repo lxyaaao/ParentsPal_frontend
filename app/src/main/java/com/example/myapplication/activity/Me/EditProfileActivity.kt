@@ -253,7 +253,7 @@ private fun EditProfileScreen(activity: Activity) {
             selectedFileUri = uri // 将选中的文件 URI 存储到状态中
             selectedFileUri?.let { fileUri ->
                 val file = uriToFile(fileUri, activity)
-                uploadFile(file, activity, context)
+                uploadCertification(file, activity, context)
             }
         }
 
@@ -393,8 +393,9 @@ private fun uriToFile(uri: Uri, context: Context): File {
     return tempFile
 }
 
+
 // 上传文件到服务器
-fun uploadFile(file: File, activity: Activity, context: Context) {
+fun uploadCertification(file: File, activity: Activity, context: Context) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val parentId = sharedPreferences.getInt("parentId", 0)
@@ -402,7 +403,7 @@ fun uploadFile(file: File, activity: Activity, context: Context) {
     CoroutineScope(Dispatchers.Main).launch {
         try {
 
-            val apiString = "api/appuser/${parentId}/upload-profile"
+            val apiString = "api/appuser/${parentId}/upload-expert-picture"
             println(apiString)
             val result = sendPostRequestWithFile(apiString, file)
 
@@ -415,7 +416,7 @@ fun uploadFile(file: File, activity: Activity, context: Context) {
 
     CoroutineScope(Dispatchers.Main).launch {
         val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
-        val apiString = "api/appuser/${parentId}/profile-picture"
+        val apiString = "api/appuser/${parentId}/upload-expert-pictureexpert-picture"
         downloadImage(apiString, file.absolutePath)
     }
 
