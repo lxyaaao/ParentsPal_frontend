@@ -79,7 +79,6 @@ private fun CertificationScreen(activity: Activity) {
     val context = LocalContext.current
 
     var backFlag by remember { mutableStateOf(false) }
-    var confirmClick by remember { mutableStateOf(false) }
 
     var nameClick by remember { mutableStateOf(false) }
     var expertName by remember { mutableStateOf(sharedPreferences.getString("expertName", " ") ?: " ") }
@@ -88,7 +87,6 @@ private fun CertificationScreen(activity: Activity) {
     var job by remember { mutableStateOf(sharedPreferences.getString("job", " ") ?: " ") }
 
     var certificationClick by remember { mutableStateOf(false) }
-    var certification by remember { mutableStateOf(sharedPreferences.getString("job", " ") ?: " ") }
 
     var changeClick by remember { mutableStateOf(false) }
 
@@ -151,14 +149,7 @@ private fun CertificationScreen(activity: Activity) {
     )
 
     if (backFlag) {
-        val intent = Intent(activity, MeActivity::class.java)
-        activity.startActivity(intent)
-        activity.finish()
-    }
-
-    if (confirmClick) {
         saveToSharedPreferences(activity, expertName, job)
-
         val intent = Intent(activity, MeActivity::class.java)
         activity.startActivity(intent)
         activity.finish()
