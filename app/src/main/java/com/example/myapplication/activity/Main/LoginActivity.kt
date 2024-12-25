@@ -186,19 +186,27 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
-
-            val gson = Gson()
-            val response = gson.fromJson(responseString, LoginResponse::class.java)
-            println("Parsed response: $response")
-            if (response.status) {
-                val babiesList = response.babies
-                saveUser(activity, response.parentId, response.parentName, babiesList)
-                saveLoginStatus(activity, true)
-                onLoginSuccess()
-            } else {
+            try {
+                val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+                println(responseString)
+                val gson = Gson()
+                val response = gson.fromJson(responseString, LoginResponse::class.java)
+                println("Parsed response: $response")
+                if (response.status) {
+                    val babiesList = response.babies
+                    saveUser(activity, response.parentId, response.parentName, babiesList)
+                    saveLoginStatus(activity, true)
+                    onLoginSuccess()
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, "网络错误，请稍后尝试", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
