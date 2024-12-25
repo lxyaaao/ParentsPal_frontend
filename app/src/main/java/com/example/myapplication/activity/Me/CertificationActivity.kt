@@ -132,28 +132,13 @@ private fun CertificationScreen(activity: Activity) {
                 Divider(color = Color.LightGray, thickness = 1.dp)
 
                 ButtonWithTwoTexts(
-                    leftText = "职业",
-                    rightText = job,
-                    onClick = { jobClick = true }
-                )
-
-                Divider(color = Color.LightGray, thickness = 1.dp)
-
-                ButtonWithTwoTexts(
                     leftText = "上传证书",
                     rightText = "",
-                    onClick = { certificationClick = true }
+                    onClick = { changeClick = true }
                 )
             }
         }
     )
-
-    if (backFlag) {
-        saveToSharedPreferences(activity, expertName, job)
-        val intent = Intent(activity, MeActivity::class.java)
-        activity.startActivity(intent)
-        activity.finish()
-    }
 
     if (nameClick) {
         ExpertNameInputDialog(initialName = "",
@@ -163,34 +148,14 @@ private fun CertificationScreen(activity: Activity) {
                 nameClick = false })
     }
 
-    if (jobClick) {
-        JobInputDialog(initialJob = "",
-            onDismiss = { jobClick = false },
-            onConfirm = { newJob ->
-                job = newJob
-                jobClick = false })
+    if (backFlag) {
+        val editor = sharedPreferences.edit()
+        editor.putString("expertName", expertName).apply()
+
+        val intent = Intent(activity, MeActivity::class.java)
+        activity.startActivity(intent)
+        activity.finish()
     }
-
-
-
-    if (certificationClick) {
-        AlertDialog(
-            onDismissRequest = { certificationClick = false },
-            confirmButton = {
-                Button(onClick = {
-                    changeClick = true
-                    certificationClick = false
-                }) {
-                    Text("上传新证书")
-                }
-
-            },
-            text = {
-                // 证书显示的相关逻辑
-            }
-        )
-    }
-
 
     if (changeClick) {
         var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -241,45 +206,4 @@ fun ExpertNameInputDialog(
             }
         }
     )
-}
-
-@Composable
-fun JobInputDialog(
-    initialJob: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var job by remember { mutableStateOf(TextFieldValue(initialJob)) }
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        title = { Text(text = "修改职业") },
-        text = {
-            TextField(
-                value = job,
-                onValueChange = { job = it },
-                placeholder = { Text(text = "输入您的职业", color = Color.Gray) }
-            )
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(job.text) }) {
-                Text(text = "确定")
-            }
-        },
-        dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = "取消")
-            }
-        }
-    )
-}
-
-
-fun saveToSharedPreferences(activity: Activity, expertName: String, job: String) {
-    val sharedPreferences: SharedPreferences =
-        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
-    editor.putString("expertName", expertName)
-    editor.putString("job", job)
-    editor.apply()
 }

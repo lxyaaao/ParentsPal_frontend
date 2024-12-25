@@ -111,7 +111,6 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
             )
         },
         content = { paddingValues ->
-            // 主内容，确保遵守padding
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

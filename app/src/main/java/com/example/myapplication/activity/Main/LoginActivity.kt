@@ -223,6 +223,7 @@ fun saveLoginStatus(activity: Activity, isLoggedIn: Boolean) {
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
     editor.putBoolean("isLoggedIn", isLoggedIn)
+    editor.putString("expertName", "")
     editor.apply()
 }
 
