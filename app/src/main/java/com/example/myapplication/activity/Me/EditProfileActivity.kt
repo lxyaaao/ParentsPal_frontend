@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.icu.text.SimpleDateFormat
 import android.net.Uri
@@ -77,6 +78,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 import java.util.Date
 import java.util.Locale
 
@@ -253,7 +255,7 @@ private fun EditProfileScreen(activity: Activity) {
             selectedFileUri = uri // 将选中的文件 URI 存储到状态中
             selectedFileUri?.let { fileUri ->
                 val file = uriToFile(fileUri, activity)
-                uploadCertification(file, activity, context)
+                uploadFile(file, activity, context)
             }
         }
 
@@ -378,23 +380,62 @@ fun getNameFromSharedPreferences(activity: Activity): String {
     return sharedPreferences.getString("name", "昵称") ?: "昵称"
 }
 
-
-// 将 URI 转换为 File 对象
 private fun uriToFile(uri: Uri, context: Context): File {
     val contentResolver = context.contentResolver
-    val fileName = "${System.currentTimeMillis()}.jpg"  // 临时文件名
+    val fileName = "${System.currentTimeMillis()}.jpg"
     val tempFile = File(context.cacheDir, fileName)
 
     contentResolver.openInputStream(uri)?.use { inputStream ->
-        tempFile.outputStream().use { outputStream ->
-            inputStream.copyTo(outputStream)
-        }
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+
+        compressBitmapToFile(originalBitmap, tempFile, maxFileSizeKB = 128) // 最大128KB
     }
+
     return tempFile
 }
 
+// 压缩 Bitmap 到指定文件
+private fun compressBitmapToFile(bitmap: Bitmap, file: File, maxFileSizeKB: Int) {
+    var quality = 100 // 初始压缩质量为100%
+    var fileSize: Long
+
+    do {
+        FileOutputStream(file).use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+        }
+        fileSize = file.length() / 1024
+        quality -= 5
+    } while (fileSize > maxFileSizeKB && quality > 0)
+}
 
 // 上传文件到服务器
+fun uploadFile(file: File, activity: Activity, context: Context) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val parentId = sharedPreferences.getInt("parentId", 0)
+
+    CoroutineScope(Dispatchers.Main).launch {
+        try {
+
+            val apiString = "api/appuser/${parentId}/upload-profile"
+            println(apiString)
+            val result = sendPostRequestWithFile(apiString, file)
+
+            println(result)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("Error: ${e.message}")
+        }
+    }
+
+    CoroutineScope(Dispatchers.Main).launch {
+        val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
+        val apiString = "api/appuser/${parentId}/profile-picture"
+        downloadImage(apiString, file.absolutePath)
+    }
+
+}
+
 fun uploadCertification(file: File, activity: Activity, context: Context) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
@@ -413,11 +454,4 @@ fun uploadCertification(file: File, activity: Activity, context: Context) {
             println("Error: ${e.message}")
         }
     }
-
-    CoroutineScope(Dispatchers.Main).launch {
-        val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
-        val apiString = "api/appuser/${parentId}/upload-expert-pictureexpert-picture"
-        downloadImage(apiString, file.absolutePath)
-    }
-
 }

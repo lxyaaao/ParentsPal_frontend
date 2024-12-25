@@ -185,9 +185,11 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
             put("password", password)
         }
 
+        var responseString = ""
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+                responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
                 println(responseString)
                 val gson = Gson()
                 val response = gson.fromJson(responseString, LoginResponse::class.java)
@@ -205,7 +207,7 @@ fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLogi
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(activity, "网络错误，请稍后尝试", Toast.LENGTH_SHORT)
+                    Toast.makeText(activity, responseString, Toast.LENGTH_SHORT)
                         .show()
                 }
             }
