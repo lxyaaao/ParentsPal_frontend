@@ -295,7 +295,8 @@ fun ButtonWithTextAndIcon(
                         bitmap = imageBitmap,
                         contentDescription = "Avatar",
                         modifier = Modifier.size(36.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     val context = LocalContext.current
@@ -306,7 +307,8 @@ fun ButtonWithTextAndIcon(
                         painter = painterResource(id = resId),
                         contentDescription = "Avatar",
                         modifier = Modifier.size(36.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 }
             }
