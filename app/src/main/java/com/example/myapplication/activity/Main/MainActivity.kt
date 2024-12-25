@@ -59,6 +59,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.activity.Blog.BlogActivity
+import com.example.myapplication.activity.Me.BabyActivity
 import com.example.myapplication.activity.Me.MeActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
@@ -92,7 +93,7 @@ class MainActivity : ComponentActivity() {
 
             val sharedPreferences: SharedPreferences =
                 this.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            val myName = sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字"
+            val myName = sharedPreferences.getString("name", "") ?: ""
 
             // 你可以在这里将 token 发送到你的服务器或进行其他处理
             lifecycleScope.launch {
@@ -184,6 +185,16 @@ fun MainScreen(activity: Activity) {
 
 @Composable
 fun HomeMainScreen(activity: Activity) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    val babyId = sharedPreferences.getInt("babyId", 0)
+
+    if (babyId == 0) {
+        val intent = Intent(activity, BabyActivity::class.java)
+        activity.startActivity(intent)
+        activity.finish()
+    }
+
     updateProfile(activity)
 
     Column(modifier = Modifier.padding(32.dp)) {

@@ -26,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -122,14 +124,22 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("名字") },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF1E3E6),
+                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 TextField(
                     value = tele,
                     onValueChange = { tele = it },
                     label = { Text("电话") },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF1E3E6),
+                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 TextField(
@@ -137,7 +147,11 @@ fun SignUpScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                     onValueChange = { password = it },
                     label = { Text("密码") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF1E3E6),
+                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {

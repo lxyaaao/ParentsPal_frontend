@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,7 +43,13 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.api.LoginResponse
 import com.example.myapplication.api.LoginRequest
 import com.example.myapplication.api.RetrofitClient
+import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import retrofit2.Response
 import retrofit2.Call
 import retrofit2.Callback
@@ -116,7 +123,11 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                     value = tele,
                     onValueChange = { tele = it },
                     label = { Text("电话") },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF1E3E6),
+                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 TextField(
@@ -124,7 +135,11 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
                     onValueChange = { password = it },
                     label = { Text("密码") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF1E3E6),
+                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
@@ -162,31 +177,35 @@ fun LoginScreen(activity: Activity, onLoginSuccess: () -> Unit) {
 }
 
 fun loginLogic(phoneNumber: String, password: String, activity: Activity, onLoginSuccess: () -> Unit) {
-    val request = LoginRequest(phoneNumber = phoneNumber, password = password)
+    try {
+        val apiPath = "api/appuser/login"
 
-    RetrofitClient.apiService.login(request).enqueue(object : Callback<LoginResponse> {
-        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-            if (response.isSuccessful) {
-                val loginResponse = response.body()
-                if (loginResponse != null) {
-                    if (loginResponse.status) {
-                        saveTele(activity, phoneNumber)
-                        saveUser(activity, loginResponse.parentId, loginResponse.parentName, loginResponse.babies)
-                        saveLoginStatus(activity, true)
-                        onLoginSuccess()
-                    } else {
-                        Toast.makeText(activity, loginResponse.message, Toast.LENGTH_SHORT).show()
-                    }
-                }
+        val requestBody = JSONObject().apply {
+            put("phoneNumber", phoneNumber)
+            put("password", password)
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val responseString = sendPostRequestWithRequest(apiPath, requestBody.toString())
+
+            val gson = Gson()
+            val response = gson.fromJson(responseString, LoginResponse::class.java)
+            println("Parsed response: $response")
+            if (response.status) {
+                val babiesList = response.babies
+                saveUser(activity, response.parentId, response.parentName, babiesList)
+                saveLoginStatus(activity, true)
+                onLoginSuccess()
             } else {
-                Toast.makeText(activity, "电话或密码错误", Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(activity, "Error: ${response.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
-        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-            Toast.makeText(activity, "网络错误，请稍后再试", Toast.LENGTH_SHORT).show()
-        }
-    })
+    } catch (e: Exception) {
+        println("Error")
+    }
 }
 
 fun saveLoginStatus(activity: Activity, isLoggedIn: Boolean) {

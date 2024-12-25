@@ -354,7 +354,7 @@ private fun ConversationScreen(activity: Activity) {
     val conversationId = remember { mutableStateOf("") }
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    var myName by remember { mutableStateOf(sharedPreferences.getString("name", "宝宝名字") ?: "宝宝名字") }
+    val myName by remember { mutableStateOf(sharedPreferences.getString("name", "") ?: "") }
 
 
     LaunchedEffect(Unit) {

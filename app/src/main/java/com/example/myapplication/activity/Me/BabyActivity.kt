@@ -29,6 +29,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,7 +71,7 @@ private fun BabyScreen(activity: Activity) {
 
     var name by remember { mutableStateOf(sharedPreferences.getString("babyName", "") ?: "") }
     var babyGender by remember { mutableStateOf(sharedPreferences.getString("babyGender", "") ?: "") }
-    var babyId by remember { mutableStateOf(sharedPreferences.getInt("babyId", 0)) }
+    var babyId by remember { mutableIntStateOf(sharedPreferences.getInt("babyId", 0)) }
     var date by remember { mutableStateOf(sharedPreferences.getString("babyBirthdate", "") ?: "") }
 
     Scaffold(

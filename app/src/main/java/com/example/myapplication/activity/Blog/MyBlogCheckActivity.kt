@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -79,6 +80,7 @@ import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
 import com.example.myapplication.utils.NetworkUtils.sendPostRequestWithRequest
+import com.example.myapplication.utils.getUserExpertStatus
 import com.example.myapplication.utils.sendDeleteRequest
 import com.example.myapplication.utils.sendPutRequest
 import com.google.gson.Gson
@@ -418,86 +420,97 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
 
-                            var isFocused by remember { mutableStateOf(false) }
+                            var isExpert by remember { mutableStateOf(false) }
 
-                            TextField(
-                                value = commentText,
-                                onValueChange = { commentText = it },
-                                label = { Text("Add a comment...") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(56.dp)
-                                    .padding(start = 4.dp, end = 4.dp)
-                                    .focusRequester(focusRequester)
-                                    .onFocusChanged { focusState ->
-                                        isFocused = focusState.isFocused
-                                    },
-                                singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color(0xFFF1E3E6),
-                                    unfocusedContainerColor = Color(0xFFF1E3E6),
-                                ),
-                            )
+                            // Launch a coroutine to get the expert status
+                            LaunchedEffect(parentId) {
+                                isExpert = getUserExpertStatus(parentId)
+                                Log.d("MeActivity", "isExpert: $isExpert")
+                            }
 
-                            IconButton(
-                                onClick = {
-                                    if (commentText.text.isNotBlank()) {
-                                        var apiPath = ""
-                                        var requestBody = JSONObject().apply {
-                                            put("articleId", "")
-                                            put("userId", "")
-                                            put("content", "")
-                                        }
+                            if (isExpert) {
+                                var isFocused by remember { mutableStateOf(false) }
 
-                                        if (selectedTabIndex == 0) {
-                                            apiPath = "api/comment"
-
-                                            requestBody = JSONObject().apply {
-                                                put("articleId", articleId)
-                                                put("userId", parentId)
-                                                put("content", commentText.text)
-                                            }
-                                        } else {
-                                            apiPath = "api/qnaComment"
-
-                                            requestBody = JSONObject().apply {
-                                                put("qnaId", articleId)
-                                                put("userId", parentId)
-                                                put("content", commentText.text)
-                                            }
-                                        }
-
-                                        println(requestBody)
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            val responseString = sendPostRequestWithRequest(
-                                                apiPath,
-                                                requestBody.toString()
-                                            )
-                                            println(responseString)
-                                        }
-
-                                        commentText = TextFieldValue(
-                                            text = "",
-                                        )
-
-                                        val editor = sharedPreferences.edit()
-                                        editor.putBoolean("refreshCommentState", true)
-                                        editor.apply()
-
-                                        focusManager.clearFocus()
-
-                                        val intent = Intent(activity, MyBlogCheckActivity::class.java)
-                                        activity.startActivity(intent)
-                                        activity.finish()
-                                    }
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Send,
-                                    contentDescription = "Submit Comment",
-                                    tint = Color.Gray
+                                TextField(
+                                    value = commentText,
+                                    onValueChange = { commentText = it },
+                                    label = { Text("Add a comment...") },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(56.dp)
+                                        .padding(start = 4.dp, end = 4.dp)
+                                        .focusRequester(focusRequester)
+                                        .onFocusChanged { focusState ->
+                                            isFocused = focusState.isFocused
+                                        },
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = Color(0xFFF1E3E6),
+                                        unfocusedContainerColor = Color(0xFFF1E3E6),
+                                    ),
                                 )
+
+                                IconButton(
+                                    onClick = {
+                                        if (commentText.text.isNotBlank()) {
+                                            var apiPath = ""
+                                            var requestBody = JSONObject().apply {
+                                                put("articleId", "")
+                                                put("userId", "")
+                                                put("content", "")
+                                            }
+
+                                            if (selectedTabIndex == 0) {
+                                                apiPath = "api/comment"
+
+                                                requestBody = JSONObject().apply {
+                                                    put("articleId", articleId)
+                                                    put("userId", parentId)
+                                                    put("content", commentText.text)
+                                                }
+                                            } else {
+                                                apiPath = "api/qnaComment"
+
+                                                requestBody = JSONObject().apply {
+                                                    put("qnaId", articleId)
+                                                    put("userId", parentId)
+                                                    put("content", commentText.text)
+                                                }
+                                            }
+
+                                            println(requestBody)
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                val responseString = sendPostRequestWithRequest(
+                                                    apiPath,
+                                                    requestBody.toString()
+                                                )
+                                                println(responseString)
+                                            }
+
+                                            commentText = TextFieldValue(
+                                                text = "",
+                                            )
+
+                                            val editor = sharedPreferences.edit()
+                                            editor.putBoolean("refreshCommentState", true)
+                                            editor.apply()
+
+                                            focusManager.clearFocus()
+
+                                            val intent =
+                                                Intent(activity, MyBlogCheckActivity::class.java)
+                                            activity.startActivity(intent)
+                                            activity.finish()
+                                        }
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Send,
+                                        contentDescription = "Submit Comment",
+                                        tint = Color.Gray
+                                    )
+                                }
                             }
                         }
                     }
