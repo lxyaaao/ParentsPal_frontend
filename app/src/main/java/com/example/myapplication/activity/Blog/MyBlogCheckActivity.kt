@@ -12,7 +12,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -46,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,14 +61,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -77,7 +75,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.R
 import com.example.myapplication.activity.AIQA.QAActivity
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
@@ -120,14 +117,21 @@ private fun MyBlogCheckScreen(activity: Activity) {
     var saves by remember { mutableIntStateOf(0) }
     var articleUserId  by remember { mutableIntStateOf(0) }
     var articleUserName by remember { mutableStateOf("") }
+    val selectedTabIndex = sharedPreferences.getInt("selectedTabIndex", 0)
 
     val likedArticleIds = sharedPreferences.getStringSet("likedArticleIds", emptySet())
         ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
     val savedArticleIds = sharedPreferences.getStringSet("savedArticleIds", emptySet())
         ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
 
+    val urlPart = if (selectedTabIndex == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
     LaunchedEffect(articleId) {
-        val apiString = "api/article/$articleId"
+        val apiString = "api/$urlPart/$articleId"
         val response = sendGetRequest(apiString)
         try {
             println(response)
@@ -322,7 +326,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
                     ) {
-                        CommentSection(articleId, activity, onClick = {username ->
+                        CommentSection(articleId, activity, selectedTabIndex, onClick = {username ->
                             commentText = TextFieldValue(
                                 text = "回复 $username: ",
                                 selection = TextRange("回复 $username: ".length) // 光标定位到末尾
@@ -349,7 +353,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            val apiString = "api/article/$parentId/likes/$articleId&$opLikes"
+                                            val apiString = "api/$urlPart/$parentId/likes/$articleId&$opLikes"
                                             sendPutRequest(apiString, "")
                                         }
 
@@ -387,7 +391,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                         }
 
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            val apiString = "api/article/$parentId/saves/$articleId&$opSaves"
+                                            val apiString = "api/$urlPart/$parentId/saves/$articleId&$opSaves"
                                             sendPutRequest(apiString, "")
                                         }
 
@@ -428,19 +432,41 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                     .onFocusChanged { focusState ->
                                         isFocused = focusState.isFocused
                                     },
-                                singleLine = true
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color(0xFFF1E3E6),
+                                    unfocusedContainerColor = Color(0xFFF1E3E6),
+                                ),
                             )
 
                             IconButton(
                                 onClick = {
                                     if (commentText.text.isNotBlank()) {
-                                        val apiPath = "api/comment"
-
-                                        val requestBody = JSONObject().apply {
-                                            put("articleId", articleId)
-                                            put("userId", parentId)
-                                            put("content", commentText.text)
+                                        var apiPath = ""
+                                        var requestBody = JSONObject().apply {
+                                            put("articleId", "")
+                                            put("userId", "")
+                                            put("content", "")
                                         }
+
+                                        if (selectedTabIndex == 0) {
+                                            apiPath = "api/comment"
+
+                                            requestBody = JSONObject().apply {
+                                                put("articleId", articleId)
+                                                put("userId", parentId)
+                                                put("content", commentText.text)
+                                            }
+                                        } else {
+                                            apiPath = "api/qnaComment"
+
+                                            requestBody = JSONObject().apply {
+                                                put("qnaId", articleId)
+                                                put("userId", parentId)
+                                                put("content", commentText.text)
+                                            }
+                                        }
+
                                         println(requestBody)
                                         CoroutineScope(Dispatchers.Main).launch {
                                             val responseString = sendPostRequestWithRequest(
@@ -517,7 +543,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
             confirmButton = {
                 Button(
                     onClick = {
-                        val apiString = "api/article/$articleId"
+                        val apiString = "api/$urlPart/$articleId"
                         CoroutineScope(Dispatchers.IO).launch {
                             sendDeleteRequest(apiString)
                         }
@@ -542,12 +568,17 @@ private fun MyBlogCheckScreen(activity: Activity) {
 }
 
 @Composable
-fun CommentSection(articleId: Int, activity: Activity, onClick: (String) -> Unit) {
+fun CommentSection(articleId: Int, activity: Activity, number: Int, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val refreshState = sharedPreferences.getBoolean("refreshCommentState", false)
 
-    val apiString = "api/article-comment?articleId=$articleId"
+    var apiString = ""
+    apiString = if (number == 0) {
+        "api/article-comment?articleId=$articleId"
+    } else {
+        "api/qna-qnaComment?qnaId=$articleId"
+    }
     var comments: List<Comment> by remember { mutableStateOf(emptyList()) }
 
     LaunchedEffect(refreshState) {
@@ -555,6 +586,7 @@ fun CommentSection(articleId: Int, activity: Activity, onClick: (String) -> Unit
         try {
             val gson = Gson()
             val apiResponse = gson.fromJson(response, CommentResponse::class.java)
+            println(apiResponse)
             comments = if (!apiResponse.success) {
                 emptyList()
             } else {
@@ -580,7 +612,7 @@ fun CommentSection(articleId: Int, activity: Activity, onClick: (String) -> Unit
         LazyColumn(modifier = Modifier.fillMaxWidth()
             .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
-                CommentItem(comment = comment, activity, onClick = { username ->
+                CommentItem(comment = comment, activity, number, onClick = { username ->
                     onClick(username) })
             }
         }
@@ -591,7 +623,7 @@ fun CommentSection(articleId: Int, activity: Activity, onClick: (String) -> Unit
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CommentItem(comment: Comment, activity: Activity, onClick: (String) -> Unit) {
+fun CommentItem(comment: Comment, activity: Activity, number: Int, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val parentId = sharedPreferences.getInt("parentId", 0)
@@ -656,7 +688,12 @@ fun CommentItem(comment: Comment, activity: Activity, onClick: (String) -> Unit)
                     }
 
                     CoroutineScope(Dispatchers.IO).launch {
-                        val apiString = "api/comment/$parentId/likes/${comment.commentId}&$opLikes"
+                        var apiString = ""
+                        apiString = if (number == 0) {
+                            "api/comment/$parentId/likes/${comment.commentId}&$opLikes"
+                        } else {
+                            "api/qnaComment/$parentId/likes/${comment.qnaCommentId}&$opLikes"
+                        }
                         val response = sendPutRequest(apiString, "")
                         println(response)
                     }
@@ -692,7 +729,12 @@ fun CommentItem(comment: Comment, activity: Activity, onClick: (String) -> Unit)
             text = { Text("您确定要删除此评论吗？") },
             confirmButton = {
                 Button(onClick = {
-                    val apiString = "api/comment/${comment.commentId}"
+                    var apiString = ""
+                    apiString = if (number == 0) {
+                        "api/comment/${comment.commentId}"
+                    } else {
+                        "api/qnaComment/${comment.qnaCommentId}"
+                    }
                     CoroutineScope(Dispatchers.IO).launch {
                         sendDeleteRequest(apiString)
                     }
@@ -733,6 +775,7 @@ data class CommentResponse(
 
 data class Comment(
     val commentId: Int,
+    val qnaCommentId: Int,
     val articleId: Int,
     val userId: Int,
     val username: String,

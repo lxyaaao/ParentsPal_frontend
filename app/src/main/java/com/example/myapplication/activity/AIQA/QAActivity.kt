@@ -398,8 +398,8 @@ private fun ConversationScreen(activity: Activity) {
                 label = { Text("发送消息") },
                 shape = RoundedCornerShape(50), // Fully rounded corners
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFFFFD9E0),
-                    unfocusedContainerColor = Color(0xFFFFD9E0),
+                    focusedContainerColor = Color(0xFFF1E3E6),
+                    unfocusedContainerColor = Color(0xFFF1E3E6),
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                 ),

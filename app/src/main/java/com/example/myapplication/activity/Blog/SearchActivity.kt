@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,7 +81,11 @@ fun SearchScreen(activity: Activity) {
                     .height(48.dp)
                     .fillMaxWidth(0.85f)
                     .padding(start = 8.dp),
-                textStyle = TextStyle(fontSize = 14.sp)
+                textStyle = TextStyle(fontSize = 14.sp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF1E3E6),
+                    unfocusedContainerColor = Color(0xFFF1E3E6),
+                ),
             )
 
             IconButton(

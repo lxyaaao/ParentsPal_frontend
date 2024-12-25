@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,7 +66,9 @@ class BlogMineActivity : ComponentActivity() {
 @Composable
 private fun BlogMineScreen(activity: Activity) {
     val navController = rememberNavController()
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    var selectedTabIndex by remember { mutableIntStateOf(sharedPreferences.getInt("selectedTabIndex", 0)) }
 
     Scaffold(
         topBar = { CenterAlignedTopAppBarExample(activity) },
@@ -104,8 +107,8 @@ private fun BlogMineScreen(activity: Activity) {
                 paddingValuesIn ->
             Column(modifier = Modifier.padding(paddingValuesIn)) {
                 when (selectedTabIndex) {
-                    0 -> MyTabContent1(activity)
-                    1 -> MyTabContent2(activity)
+                    0 -> MyTabContent(activity, 0)
+                    1 -> MyTabContent(activity, 1)
                 }
             }
         }
@@ -116,13 +119,65 @@ private fun BlogMineScreen(activity: Activity) {
 
 
 @Composable
-fun MyTabContent1(activity: Activity) {
-    MyShareContent(activity)
-}
+fun MyTabContent(activity: Activity, number: Int) {
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
-@Composable
-fun MyTabContent2(activity: Activity) {
-    MyAskContent(activity)
+    val parentId = sharedPreferences.getInt("parentId", 0)
+    var articles: List<Article> by remember { mutableStateOf(emptyList()) }
+    val refreshState = sharedPreferences.getBoolean("refreshArticleState", false)
+
+    FetchLikedArticles(activity, number)
+    FetchLikedComments(activity, number)
+
+    val urlPart = if (number == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
+    val apiString = "api/user-$urlPart/$parentId"
+    LaunchedEffect(refreshState) {
+        val response = sendGetRequest(apiString)
+        try {
+            val gson = Gson()
+            val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
+            articles = if (!apiResponse.success) {
+                emptyList()
+            } else {
+                apiResponse.data
+            }
+        } catch (e: Exception) {
+            println("Json error: $response")
+        }
+
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("refreshArticleState", false)
+        editor.apply()
+    }
+
+    if(articles.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(articles.reversed()) { blogContent ->
+                BlogContentCard(blogContent, onClick = {
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("articleId", blogContent.articleId)
+                    editor.putBoolean("refreshCommentState", false)
+                    editor.putString("blogPage", "mine")
+                    editor.putInt("selectedTabIndex", number)
+                    editor.apply()
+
+                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
+                    activity.startActivity(intent)
+                    activity.finish()
+                })
+            }
+        }
+    }
 }
 
 private fun BlogMainScreen(activity: Activity) {
@@ -180,66 +235,4 @@ private fun CenterAlignedTopAppBarExample(
         activity.startActivity(intent)
         activity.finish()
     }
-}
-
-@Composable
-fun MyShareContent(activity: Activity) {
-    val sharedPreferences: SharedPreferences =
-        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-
-    val parentId = sharedPreferences.getInt("parentId", 0)
-    var articles: List<Article> by remember { mutableStateOf(emptyList()) }
-    val refreshState = sharedPreferences.getBoolean("refreshArticleState", false)
-
-    FetchLikedArticles(activity)
-    FetchLikedComments(activity)
-
-    val apiString = "api/user-article/$parentId"
-    LaunchedEffect(refreshState) {
-        val response = sendGetRequest(apiString)
-        try {
-            val gson = Gson()
-            val apiResponse = gson.fromJson(response, GetArticleResponse::class.java)
-            articles = if (!apiResponse.success) {
-                emptyList()
-            } else {
-                apiResponse.data
-            }
-        } catch (e: Exception) {
-            println("Json error: $response")
-        }
-
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("refreshArticleState", false)
-        editor.apply()
-    }
-
-    if(articles.isNotEmpty()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            items(articles.reversed()) { blogContent ->
-                BlogContentCard(blogContent, onClick = {
-                    val editor = sharedPreferences.edit()
-                    editor.putInt("articleId", blogContent.articleId)
-                    editor.putBoolean("refreshCommentState", false)
-                    editor.putString("blogPage", "mine")
-                    editor.apply()
-
-                    val intent = Intent(activity, MyBlogCheckActivity::class.java)
-                    activity.startActivity(intent)
-                    activity.finish()
-                })
-            }
-        }
-    }
-
-}
-
-@Composable
-fun MyAskContent(activity: Activity) {
-
-
 }

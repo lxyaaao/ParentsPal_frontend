@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -109,11 +110,9 @@ private fun MeMainScreen(activity: Activity) {
 
     updateProfile(activity)
 
-
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(60.dp))
         ProfileSection(
-            avatarResId = R.drawable.photo1,
             name = name,
             activity
         )
@@ -168,7 +167,7 @@ private fun MeMainScreen(activity: Activity) {
 }
 
 @Composable
-fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
+fun ProfileSection(name: String, activity: Activity) {
     var showImage by remember { mutableStateOf(false) }  // 控制大图是否显示
     var showEditButton by remember { mutableStateOf(false) }  // 控制“编辑资料”按钮是否显示
 
@@ -195,18 +194,36 @@ fun ProfileSection(avatarResId: Int, name: String, activity: Activity) {
             .padding(8.dp),
         horizontalArrangement = Arrangement.Start // 左对齐
     ) {
-        val image = remember(localImagePath) {
-            BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
-        } ?: ImageVector.vectorResource(id = R.drawable.photo9) // 使用矢量图
-        Image(
-            imageVector = image as? ImageVector ?: ImageVector.vectorResource(id = R.drawable.photo9), // 强制转换为 ImageVector
-            contentDescription = "Avatar",
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .clickable { showImage = true },
-            contentScale = ContentScale.Crop
-        )
+        if (localImagePath != null) {
+            val imageBitmap = remember(localImagePath) {
+                BitmapFactory.decodeFile(localImagePath)?.asImageBitmap()
+            }
+
+            if (imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .clickable { showImage = true },
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                val resourceName = "photo${parentId % 12 + 1}"
+                val resId = context.resources.getIdentifier(resourceName, "drawable", context.packageName)
+
+                Image(
+                    painter = painterResource(id = resId),
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .clickable { showImage = true },
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 

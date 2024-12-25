@@ -115,14 +115,6 @@ private fun CertificationScreen(activity: Activity) {
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { confirmClick = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = "确认"
-                        )
-                    }
-                }
             )
         },
         content = { paddingValues ->

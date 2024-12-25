@@ -31,12 +31,14 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -73,7 +75,9 @@ class BlogAddActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BlogAddScreen(activity: Activity) {
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    var selectedTabIndex by remember { mutableIntStateOf(sharedPreferences.getInt("selectedTabIndex", 0)) }
     var checkClick by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -93,8 +97,6 @@ private fun BlogAddScreen(activity: Activity) {
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        val sharedPreferences: SharedPreferences =
-                            activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
                         val articleId: Int = sharedPreferences.getInt("articleId", 0)
 
                         if (articleId == 0) {
@@ -152,8 +154,8 @@ private fun BlogAddScreen(activity: Activity) {
                 paddingValuesIn ->
             Column(modifier = Modifier.padding(paddingValuesIn)) {
                 when (selectedTabIndex) {
-                    0 -> addArticle(activity, checkClick)
-                    1 -> addArticle(activity, checkClick)
+                    0 -> addArticle(activity, checkClick, 0)
+                    1 -> addArticle(activity, checkClick, 1)
                 }
             }
         }
@@ -163,7 +165,7 @@ private fun BlogAddScreen(activity: Activity) {
 }
 
 @Composable
-fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
+fun addArticle(activity: Activity, checkClick: Boolean, number: Int): Boolean {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
@@ -173,9 +175,15 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
 
     val articleId: Int = sharedPreferences.getInt("articleId", 0)
 
+    val urlPart = if (number == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
     if (articleId != 0 ) {
         LaunchedEffect(articleId) {
-            val apiString = "api/article/$articleId"
+            val apiString = "api/$urlPart/$articleId"
             val response = sendGetRequest(apiString)
             try {
                 println(response)
@@ -200,7 +208,11 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
             label = { Text("输入标题") },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = 8.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color(0xFFF1E3E6),
+                unfocusedContainerColor = Color(0xFFF1E3E6),
+            ),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -212,8 +224,11 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 120.dp)
-                .padding(bottom = 8.dp)
-                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                .padding(bottom = 8.dp) ,
+            colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFF1E3E6),
+                    unfocusedContainerColor = Color(0xFFF1E3E6),
+                ),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -223,7 +238,7 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
         LaunchedEffect(Unit) {
             if (articleId == 0) {
                 try {
-                    val apiPath = "api/article"
+                    val apiPath = "api/$urlPart"
 
                     val requestBody = JSONObject().apply {
                         put("userId", parentId)
@@ -246,7 +261,7 @@ fun addArticle(activity: Activity, checkClick: Boolean): Boolean {
                 activity.finish()
             } else {
                 try {
-                    val apiPath = "api/article/update/${articleId}"
+                    val apiPath = "api/$urlPart/update/${articleId}"
 
                     val requestBody = JSONObject().apply {
                         put("title", title)

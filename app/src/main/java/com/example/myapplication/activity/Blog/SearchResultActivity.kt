@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,10 +64,7 @@ fun SearchResultScreen(activity: Activity) {
     var backFlag by remember { mutableStateOf(false) }
 
     val title by remember { mutableStateOf(sharedPreferences.getString("searchResult", " ") ?: " ") }
-    var selectedTabIndex by remember { mutableStateOf(0) }
-
-    FetchLikedArticles(activity)
-    FetchLikedComments(activity)
+    var selectedTabIndex by remember { mutableIntStateOf(sharedPreferences.getInt("selectedTabIndex", 0)) }
 
     Scaffold(
         topBar = {
@@ -111,8 +109,8 @@ fun SearchResultScreen(activity: Activity) {
                 }
 
                 when (selectedTabIndex) {
-                    0 -> TabResultContent1(title, activity)
-                    1 -> TabResultContent2()
+                    0 -> TabResultContent(title, activity, 0)
+                    1 -> TabResultContent(title, activity, 1)
                 }
             }
         }
@@ -129,10 +127,19 @@ fun SearchResultScreen(activity: Activity) {
 }
 
 @Composable
-fun TabResultContent1(title: String, activity: Activity) {
+fun TabResultContent(title: String, activity: Activity, number: Int) {
+    FetchLikedArticles(activity, number)
+    FetchLikedComments(activity, number)
+
     var articles: List<Article> by remember { mutableStateOf(emptyList()) }
 
-    val apiPath = "api/article/search?queryKeyword=$title"
+    val urlPart = if (number == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
+    val apiPath = "api/$urlPart/search?queryKeyword=$title"
     LaunchedEffect(Unit) {
         val response = sendGetRequest(apiPath)
         println("api=$apiPath, response=$response")
@@ -163,6 +170,7 @@ fun TabResultContent1(title: String, activity: Activity) {
                     editor.putInt("articleId", blogContent.articleId)
                     editor.putBoolean("refreshCommentState", false)
                     editor.putString("blogPage", "search")
+                    editor.putInt("selectedTabIndex", number)
                     editor.apply()
 
                     val intent = Intent(activity, MyBlogCheckActivity::class.java)
@@ -172,9 +180,4 @@ fun TabResultContent1(title: String, activity: Activity) {
             }
         }
     }
-}
-
-@Composable
-fun TabResultContent2() {
-
 }

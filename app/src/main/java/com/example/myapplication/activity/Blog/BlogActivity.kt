@@ -51,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,7 +97,9 @@ class BlogActivity : ComponentActivity() {
 @Composable
 private fun BlogScreen(activity: Activity) {
     val navController = rememberNavController()
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    val sharedPreferences: SharedPreferences =
+        activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+    var selectedTabIndex by remember { mutableIntStateOf(sharedPreferences.getInt("selectedTabIndex", 0)) }
 
     var isMenuExpanded by remember { mutableStateOf(false) }
 
@@ -145,8 +148,8 @@ private fun BlogScreen(activity: Activity) {
             paddingValuesIn ->
             Column(modifier = Modifier.padding(paddingValuesIn)) {
                 when (selectedTabIndex) {
-                    0 -> TabContent1(activity)
-                    1 -> TabContent2()
+                    0 -> TabContent(activity, 0)
+                    1 -> TabContent(activity, 1)
                 }
             }
             Row(modifier = Modifier.padding(paddingValuesIn)) {
@@ -158,7 +161,7 @@ private fun BlogScreen(activity: Activity) {
 
 
 @Composable
-fun TabContent1(activity: Activity) {
+fun TabContent(activity: Activity, number: Int) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
@@ -166,16 +169,25 @@ fun TabContent1(activity: Activity) {
     val selectedItem = sharedPreferences.getInt("selectedItem", 0)
     val parentId = sharedPreferences.getInt("parentId", 0)
 
-    FetchLikedArticles(activity)
-    FetchLikedComments(activity)
+    FetchLikedArticles(activity, number)
+    FetchLikedComments(activity, number)
+
+    val urlPart = if (number == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
+    val editor = sharedPreferences.edit()
+    editor.putInt("selectedTabIndex", number).apply()
 
     var apiString = ""
 
     if (selectedItem == 0) {
-        apiString = "api/article/hot"
+        apiString = "api/$urlPart/hot"
     }
     if (selectedItem == 1) {
-        apiString = "api/saved-article/$parentId"
+        apiString = "api/saved-$urlPart/$parentId"
     }
 
     LaunchedEffect(Unit) {
@@ -201,8 +213,12 @@ fun TabContent1(activity: Activity) {
         ) {
             items(articles) { blogContent ->
                 BlogContentCard(blogContent, onClick = {
-                    val editor = sharedPreferences.edit()
-                    editor.putInt("articleId", blogContent.articleId)
+                    if (number == 0 ) {
+                        editor.putInt("articleId", blogContent.articleId)
+                    } else {
+                        editor.putInt("articleId", blogContent.qnaId)
+                    }
+                    println(blogContent)
                     editor.putBoolean("refreshCommentState", false)
                     editor.putString("blogPage", "blog")
                     editor.apply()
@@ -214,11 +230,6 @@ fun TabContent1(activity: Activity) {
             }
         }
     }
-}
-
-@Composable
-fun TabContent2() {
-
 }
 
 private fun BlogMainScreen(activity: Activity) {
@@ -251,17 +262,17 @@ private fun CenterAlignedTopAppBarExample(
                     }
                 },
         actions = {
-                    IconButton(onClick = {
-                        val intent = Intent(activity, SearchActivity::class.java)
-                        activity.startActivity(intent)
-                        activity.finish()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = "Localized description"
-                            )
-                        }
-                    },
+            IconButton(onClick = {
+                val intent = Intent(activity, SearchActivity::class.java)
+                activity.startActivity(intent)
+                activity.finish()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = "Localized description"
+                )
+            }
+        },
     )
 }
 
@@ -414,7 +425,7 @@ fun BlogContentCard(article: Article, onClick: () -> Unit) {
 }
 
 @Composable
-fun FetchLikedArticles(activity: Activity) {
+fun FetchLikedArticles(activity: Activity, number: Int) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
@@ -425,8 +436,14 @@ fun FetchLikedArticles(activity: Activity) {
     var likedArticleIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
     var savedArticleIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
 
-    val apiLike = "api/liked-article/$parentId"
-    val apiSave = "api/saved-article/$parentId"
+    val urlPart = if (number == 0) {
+        "article"
+    } else {
+        "qna"
+    }
+
+    val apiLike = "api/liked-$urlPart/$parentId"
+    val apiSave = "api/saved-$urlPart/$parentId"
     LaunchedEffect(Unit) {
         val responseLike = sendGetRequest(apiLike)
         try {
@@ -438,7 +455,11 @@ fun FetchLikedArticles(activity: Activity) {
             } else {
                 apiResponse.data
             }
-            likedArticleIds = likedArticles.map { it.articleId }.toHashSet()
+            likedArticleIds = if (number == 0) {
+                likedArticles.map { it.articleId }.toHashSet()
+            } else {
+                likedArticles.map { it.qnaId }.toHashSet()
+            }
         } catch (e: Exception) {
             println("Json error: $responseLike")
         }
@@ -452,7 +473,11 @@ fun FetchLikedArticles(activity: Activity) {
             } else {
                 apiResponse.data
             }
-            savedArticleIds = savedArticles.map { it.articleId }.toHashSet()
+            savedArticleIds = if (number == 0) {
+                savedArticles.map { it.articleId }.toHashSet()
+            } else {
+                savedArticles.map { it.qnaId }.toHashSet()
+            }
         } catch (e: Exception) {
             println("Json error: $responseSave")
         }
@@ -465,7 +490,7 @@ fun FetchLikedArticles(activity: Activity) {
 }
 
 @Composable
-fun FetchLikedComments(activity: Activity,) {
+fun FetchLikedComments(activity: Activity, number: Int) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
@@ -474,7 +499,13 @@ fun FetchLikedComments(activity: Activity,) {
     var likedComments: List<Comment> by remember { mutableStateOf(emptyList()) }
     var likedCommentIds: HashSet<Int> by remember { mutableStateOf(hashSetOf()) }
 
-    val apiLike = "api/liked-comment?userId=$parentId"
+    val urlPart = if (number == 0) {
+        "comment"
+    } else {
+        "qnaComment"
+    }
+
+    val apiLike = "api/liked-$urlPart?userId=$parentId"
     LaunchedEffect(Unit) {
         val responseLike = sendGetRequest(apiLike)
         try {
@@ -505,6 +536,7 @@ data class GetArticleResponse(
 
 data class Article(
     val articleId: Int,
+    val qnaId: Int,
     val userId: Int,
     val username: String,
     val title: String,
