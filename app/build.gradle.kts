@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.material3)
     implementation("androidx.compose.material3:material3-window-size-class:1.3.0")
+    implementation("com.google.android.material:material:1.9.0")
     implementation(libs.androidx.material3.adaptive.navigation.suite)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
