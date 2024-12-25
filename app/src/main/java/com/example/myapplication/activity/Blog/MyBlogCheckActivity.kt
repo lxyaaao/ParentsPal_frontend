@@ -428,7 +428,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 Log.d("MeActivity", "isExpert: $isExpert")
                             }
 
-                            if (isExpert) {
+                            if (isExpert || selectedTabIndex == 0) {
                                 var isFocused by remember { mutableStateOf(false) }
 
                                 TextField(
