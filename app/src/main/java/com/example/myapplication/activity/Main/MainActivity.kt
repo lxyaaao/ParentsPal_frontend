@@ -195,7 +195,7 @@ fun HomeMainScreen(activity: Activity) {
         activity.finish()
     }
 
-    updateProfile(activity)
+    updateProfile(activity, 0)
 
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(64.dp))
@@ -390,12 +390,16 @@ fun getAlarm(activity: Activity): String {
 }
 
 @Composable
-fun updateProfile(activity: Activity) {
+fun updateProfile(activity: Activity, userId: Int) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
 
     val context = LocalContext.current
-    val parentId = sharedPreferences.getInt("parentId", 0)
+    var parentId = sharedPreferences.getInt("parentId", 0)
+
+    if (userId != 0) {
+        parentId = userId
+    }
 
     LaunchedEffect(Unit) {
         val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")

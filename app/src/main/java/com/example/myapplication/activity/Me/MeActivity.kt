@@ -108,7 +108,7 @@ private fun MeScreen(activity: Activity) {
 private fun MeMainScreen(activity: Activity) {
     val name = getNameFromSharedPreferences(activity)
 
-    updateProfile(activity)
+    updateProfile(activity, 0)
 
     Column(modifier = Modifier.padding(32.dp)) {
         Spacer(modifier = Modifier.height(60.dp))

@@ -113,7 +113,7 @@ private fun EditProfileScreen(activity: Activity) {
     val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")
     localImagePath = file.absolutePath
 
-    updateProfile(activity)
+    updateProfile(activity, 0)
 
     Scaffold(
         topBar = {
@@ -166,7 +166,7 @@ private fun EditProfileScreen(activity: Activity) {
 
     if (backFlag) {
         if (updateClick) {
-            updateProfile(activity)
+            updateProfile(activity, 0)
         }
         val intent = Intent(activity, MeActivity::class.java)
         activity.startActivity(intent)

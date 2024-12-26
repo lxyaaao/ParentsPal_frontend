@@ -77,8 +77,10 @@ import com.example.myapplication.activity.Main.HomeScreen
 import com.example.myapplication.activity.Main.NavItem
 import com.example.myapplication.activity.Main.PersonScreen
 import com.example.myapplication.activity.Main.QuestionAnswerScreen
+import com.example.myapplication.activity.Main.updateProfile
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.utils.NetworkUtils.sendGetRequest
+import com.example.myapplication.utils.downloadImage
 import com.google.gson.Gson
 import java.io.File
 
@@ -212,7 +214,7 @@ fun TabContent(activity: Activity, number: Int) {
                 .padding(16.dp)
         ) {
             items(articles) { blogContent ->
-                BlogContentCard(blogContent, onClick = {
+                BlogContentCard(activity, blogContent, onClick = {
                     if (number == 0 ) {
                         editor.putInt("articleId", blogContent.articleId)
                     } else {
@@ -340,9 +342,11 @@ fun SideRail(activity: Activity, isMenuExpanded: Boolean) {
 }
 
 @Composable
-fun BlogContentCard(article: Article, onClick: () -> Unit) {
+fun BlogContentCard(activity: Activity, article: Article, onClick: () -> Unit) {
     val context = LocalContext.current
     val parentId = article.userId
+
+    updateProfile(activity, parentId)
 
     var localImagePath by remember { mutableStateOf<String?>(null) }
     val file = File(context.cacheDir, "downloaded_image_$parentId.jpg")

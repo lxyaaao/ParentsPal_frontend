@@ -163,7 +163,7 @@ fun MyTabContent(activity: Activity, number: Int) {
                 .padding(16.dp)
         ) {
             items(articles.reversed()) { blogContent ->
-                BlogContentCard(blogContent, onClick = {
+                BlogContentCard(activity, blogContent, onClick = {
                     val editor = sharedPreferences.edit()
                     editor.putInt("articleId", blogContent.articleId)
                     editor.putBoolean("refreshCommentState", false)

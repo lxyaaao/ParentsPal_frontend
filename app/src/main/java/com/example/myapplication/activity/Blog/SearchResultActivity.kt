@@ -163,7 +163,7 @@ fun TabResultContent(title: String, activity: Activity, number: Int) {
                 .padding(16.dp)
         ) {
             items(articles) { blogContent ->
-                BlogContentCard(blogContent, onClick = {
+                BlogContentCard(activity, blogContent, onClick = {
                     val sharedPreferences: SharedPreferences =
                         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
                     val editor = sharedPreferences.edit()
