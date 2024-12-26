@@ -336,7 +336,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
                     ) {
-                        CommentSection(articleId, activity, selectedTabIndex, onClick = {username ->
+                        CommentSection(parentId, articleUserId, articleId, activity, selectedTabIndex, onClick = {username ->
                             commentText = TextFieldValue(
                                 text = "回复 $username: ",
                                 selection = TextRange("回复 $username: ".length) // 光标定位到末尾
@@ -428,7 +428,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
 
-                            if (isExpert || selectedTabIndex == 0) {
+                            if (isExpert || selectedTabIndex == 0 || parentId == articleUserId) {
                                 var isFocused by remember { mutableStateOf(false) }
 
                                 TextField(
@@ -581,7 +581,7 @@ private fun MyBlogCheckScreen(activity: Activity) {
 }
 
 @Composable
-fun CommentSection(articleId: Int, activity: Activity, number: Int, onClick: (String) -> Unit) {
+fun CommentSection(parentId: Int, articleUserId: Int, articleId: Int, activity: Activity, number: Int, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val refreshState = sharedPreferences.getBoolean("refreshCommentState", false)
@@ -625,7 +625,7 @@ fun CommentSection(articleId: Int, activity: Activity, number: Int, onClick: (St
         LazyColumn(modifier = Modifier.fillMaxWidth()
             .padding(bottom = 60.dp) ) {
             items(comments) { comment ->
-                CommentItem(comment = comment, activity, number, onClick = { username ->
+                CommentItem(parentId, articleUserId, comment = comment, activity, number, onClick = { username ->
                     onClick(username) })
             }
         }
@@ -636,7 +636,7 @@ fun CommentSection(articleId: Int, activity: Activity, number: Int, onClick: (St
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CommentItem(comment: Comment, activity: Activity, number: Int, onClick: (String) -> Unit) {
+fun CommentItem(parentId: Int, articleUserId: Int, comment: Comment, activity: Activity, number: Int, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
     val parentId = sharedPreferences.getInt("parentId", 0)
@@ -665,7 +665,7 @@ fun CommentItem(comment: Comment, activity: Activity, number: Int, onClick: (Str
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
-                            if (isExpert || number == 0) {
+                            if (isExpert || number == 0 || parentId == articleUserId) {
                                 onClick(comment.username)
                             }
                         },

@@ -167,7 +167,11 @@ fun TabResultContent(title: String, activity: Activity, number: Int) {
                     val sharedPreferences: SharedPreferences =
                         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
                     val editor = sharedPreferences.edit()
-                    editor.putInt("articleId", blogContent.articleId)
+                    if (number == 0) {
+                        editor.putInt("articleId", blogContent.articleId)
+                    } else {
+                        editor.putInt("articleId", blogContent.qnaId)
+                    }
                     editor.putBoolean("refreshCommentState", false)
                     editor.putString("blogPage", "search")
                     editor.putInt("selectedTabIndex", number)
