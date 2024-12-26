@@ -187,7 +187,8 @@ fun UserListItem(user: User, activity: Activity) {
                         contentDescription = "Avatar",
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     val resourceName = "photo${userId % 12 + 1}" // 动态的资源名称
@@ -198,7 +199,8 @@ fun UserListItem(user: User, activity: Activity) {
                         contentDescription = "Avatar",
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 }
             }
