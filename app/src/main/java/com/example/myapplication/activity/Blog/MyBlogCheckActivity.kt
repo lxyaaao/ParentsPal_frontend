@@ -639,7 +639,6 @@ fun CommentSection(parentId: Int, articleUserId: Int, articleId: Int, activity: 
 fun CommentItem(parentId: Int, articleUserId: Int, comment: Comment, activity: Activity, number: Int, onClick: (String) -> Unit) {
     val sharedPreferences: SharedPreferences =
         activity.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-    val parentId = sharedPreferences.getInt("parentId", 0)
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -693,9 +692,9 @@ fun CommentItem(parentId: Int, articleUserId: Int, comment: Comment, activity: A
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        println("list:$likedCommentIds, id:${comment.commentId}")
+        println("list:$likedCommentIds, id:${comment.qnaCommentId}")
 
-        var isLiked by remember { mutableStateOf(likedCommentIds.contains(comment.commentId)) }
+        var isLiked by remember { mutableStateOf(likedCommentIds.contains(comment.commentId) || likedCommentIds.contains((comment.qnaCommentId))) }
         var opLikes by remember { mutableStateOf("") }
         var likes by remember { mutableIntStateOf(comment.likes) }
 

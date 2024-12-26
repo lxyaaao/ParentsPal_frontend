@@ -390,7 +390,7 @@ private fun uriToFile(uri: Uri, context: Context): File {
     contentResolver.openInputStream(uri)?.use { inputStream ->
         val originalBitmap = BitmapFactory.decodeStream(inputStream)
 
-        compressBitmapToFile(originalBitmap, tempFile, maxFileSizeKB = 128) // 最大128KB
+        compressBitmapToFile(originalBitmap, tempFile, maxFileSizeKB = 64) // 最大64KB
     }
 
     return tempFile

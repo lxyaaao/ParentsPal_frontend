@@ -521,7 +521,14 @@ fun FetchLikedComments(activity: Activity, number: Int) {
             } else {
                 apiResponse.data
             }
-            likedCommentIds = likedComments.map { it.commentId }.toHashSet()
+
+            likedCommentIds = if (number == 0) {
+                likedComments.map { it.commentId }.toHashSet()
+            } else {
+                likedComments.map { it.qnaCommentId }.toHashSet()
+
+            }
+
         } catch (e: Exception) {
             println("Json error: $responseLike")
         }
