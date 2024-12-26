@@ -198,6 +198,14 @@ private fun MyBlogCheckScreen(activity: Activity) {
                     )
                 }
 
+                var isExpert by remember { mutableStateOf(false) }
+
+                // Launch a coroutine to get the expert status
+                LaunchedEffect(parentId) {
+                    isExpert = getUserExpertStatus(parentId)
+                    Log.d("MeActivity", "isExpert: $isExpert")
+                }
+
                 val context = LocalContext.current
                 var localImagePath by remember { mutableStateOf<String?>(null) }
                 val file = File(context.cacheDir, "downloaded_image_$articleUserId.jpg")
@@ -420,14 +428,6 @@ private fun MyBlogCheckScreen(activity: Activity) {
                                 )
                             }
 
-                            var isExpert by remember { mutableStateOf(false) }
-
-                            // Launch a coroutine to get the expert status
-                            LaunchedEffect(parentId) {
-                                isExpert = getUserExpertStatus(parentId)
-                                Log.d("MeActivity", "isExpert: $isExpert")
-                            }
-
                             if (isExpert || selectedTabIndex == 0) {
                                 var isFocused by remember { mutableStateOf(false) }
 
@@ -646,6 +646,14 @@ fun CommentItem(comment: Comment, activity: Activity, number: Int, onClick: (Str
     val likedCommentIds = sharedPreferences.getStringSet("likedCommentIds", emptySet())
         ?.map { it.toInt() }?.toHashSet() ?: hashSetOf()
 
+    var isExpert by remember { mutableStateOf(false) }
+
+    // Launch a coroutine to get the expert status
+    LaunchedEffect(parentId) {
+        isExpert = getUserExpertStatus(parentId)
+        Log.d("MeActivity", "isExpert: $isExpert")
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -657,7 +665,9 @@ fun CommentItem(comment: Comment, activity: Activity, number: Int, onClick: (Str
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
-                            onClick(comment.username)
+                            if (isExpert || number == 0) {
+                                onClick(comment.username)
+                            }
                         },
                         onLongPress = {
                             showDeleteDialog = true
